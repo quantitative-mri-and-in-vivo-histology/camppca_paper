@@ -15,6 +15,7 @@ dependencies = [
     "scipy>=1.15",
     "nibabel>=5.0.0",
     "matplotlib>=3.7.0",
+    "dipy>=1.12",
 ]
 
 [project.optional-dependencies]

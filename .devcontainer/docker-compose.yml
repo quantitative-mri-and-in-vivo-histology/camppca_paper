@@ -25,6 +25,8 @@ services:
       - ${DATA_PATH:?set DATA_PATH in .devcontainer/.env}:/workspace/data
       # Host FSL, read-only at the same path so its shebangs and RPATHs resolve.
       - ${FSLDIR:?set FSLDIR in .devcontainer/.env}:${FSLDIR}:ro
+      # Host ANTs, read-only at the same path.
+      - ${ANTSDIR:?set ANTSDIR in .devcontainer/.env}:${ANTSDIR}:ro
     environment:
       NODE_OPTIONS: "--max-old-space-size=4096"
       CLAUDE_CONFIG_DIR: "/home/node/.claude"
@@ -34,9 +36,10 @@ services:
       DATA_PATH: /workspace/data
       FSLDIR: "${FSLDIR}"
       FSLOUTPUTTYPE: "NIFTI_GZ"
+      ANTSPATH: "${ANTSDIR}/bin/"
       # An environment entry replaces PATH, so this is the image's PATH with FSL in front.
       # share/fsl/bin holds only the FSL tools. bin/ would also shadow python with FSL's own.
-      PATH: "${FSLDIR}/share/fsl/bin:/usr/local/share/npm-global/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin"
+      PATH: "${FSLDIR}/share/fsl/bin:${ANTSDIR}/bin:/usr/local/share/npm-global/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin"
     user: node
 
 volumes:
