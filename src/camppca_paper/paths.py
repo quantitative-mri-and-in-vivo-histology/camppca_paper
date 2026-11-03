@@ -14,3 +14,6 @@ DWI = DATA / "phantom_sh4.nii.gz"
 BVAL = DATA / "phantom_sh4.bval"
 BVEC = DATA / "phantom_sh4.bvec"
 WORK = DATA_ROOT / "analyses/subject_phantom"
+
+# eTPM tissue priors, from scripts/datasets/segmentation_priors/.
+ETPM = DATA_ROOT / "source/segmentation_priors/eTPM.nii"
