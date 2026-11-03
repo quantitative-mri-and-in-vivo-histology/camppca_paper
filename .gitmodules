@@ -1,0 +1,3 @@
+[submodule "submodules/camppca"]
+	path = submodules/camppca
+	url = git@github.com:quantitative-mri-and-in-vivo-histology/camppca.git

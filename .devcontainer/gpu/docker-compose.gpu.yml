@@ -1,0 +1,18 @@
+# GPU overlay on ../docker-compose.yml. Same image, plus all host GPUs.
+# Needs the NVIDIA Container Toolkit on the host. Check with `nvidia-smi` inside.
+#
+# FSL's GPU tools (eddy_cuda11.0, bedpostx_gpu, probtrackx2_gpu) link the CUDA
+# runtime statically. They only need the driver's libcuda.so.1, which the toolkit
+# injects. So no CUDA base image is needed.
+
+services:
+  devcontainer:
+    environment:
+      NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

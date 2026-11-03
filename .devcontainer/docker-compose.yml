@@ -1,0 +1,47 @@
+# Base devcontainer stack. Host paths come from .devcontainer/.env (gitignored).
+# If it is missing:  cp .env.example .env
+#
+# The GPU config layers gpu/docker-compose.gpu.yml on top of this file.
+
+services:
+  devcontainer:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        TZ: ${TZ:-Europe/Berlin}
+        CLAUDE_CODE_VERSION: latest
+        GIT_DELTA_VERSION: 0.18.2
+        ZSH_IN_DOCKER_VERSION: 1.2.0
+    command: sleep infinity
+    # The default 64 MB /dev/shm kills joblib / multiprocessing workers.
+    shm_size: 16g
+    volumes:
+      - ..:/workspace:delegated
+      - claude-code-bashhistory:/commandhistory
+      - claude-code-config:/home/node/.claude
+      - ${HOME}/.ssh:/home/node/.ssh-host:cached
+      # The data root. Analyses address it as data/... from the repo root.
+      - ${DATA_PATH:?set DATA_PATH in .devcontainer/.env}:/workspace/data
+      # Host FSL, read-only at the same path so its shebangs and RPATHs resolve.
+      - ${FSLDIR:?set FSLDIR in .devcontainer/.env}:${FSLDIR}:ro
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=4096"
+      CLAUDE_CONFIG_DIR: "/home/node/.claude"
+      POWERLEVEL9K_DISABLE_GITSTATUS: "true"
+      PYTHONPATH: "/workspace"
+      # The host path from .env does not exist in here.
+      DATA_PATH: /workspace/data
+      FSLDIR: "${FSLDIR}"
+      FSLOUTPUTTYPE: "NIFTI_GZ"
+      # An environment entry replaces PATH, so this is the image's PATH with FSL in front.
+      # share/fsl/bin holds only the FSL tools. bin/ would also shadow python with FSL's own.
+      PATH: "${FSLDIR}/share/fsl/bin:/usr/local/share/npm-global/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin"
+    user: node
+
+volumes:
+  # Named so the Claude Code login is shared across projects.
+  claude-code-config:
+    name: claude-code-config
+  # Unnamed so shell history stays per project.
+  claude-code-bashhistory:

@@ -1,0 +1,27 @@
+// GPU config. Fails on a machine without an NVIDIA GPU. Keep in sync with ../devcontainer.json.
+{
+  "name": "camppca_paper (GPU)",
+  "dockerComposeFile": [
+    "../docker-compose.yml",
+    "docker-compose.gpu.yml"
+  ],
+  "service": "devcontainer",
+  "workspaceFolder": "/workspace",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.debugpy",
+        "ms-toolsai.jupyter",
+        "charliermarsh.ruff",
+        "eamodio.gitlens"
+      ]
+    }
+  },
+  "remoteUser": "node",
+  "postCreateCommand": "/usr/local/bin/post-create.sh",
+  "postStartCommand": "npm update -g @anthropic-ai/claude-code",
+  "waitFor": "postStartCommand"
+}
