@@ -26,7 +26,7 @@ from matplotlib.ticker import MaxNLocator
 from scipy.ndimage import uniform_filter
 from scipy.spatial import ConvexHull
 
-from camppca_paper.paths import ROOT, WORK
+from camppca_paper.paths import DATA_ROOT, WORK
 from camppca_paper.simulation import (
     PATCH,
     load_phantom,
@@ -46,7 +46,7 @@ SHOW_B = 2000                                  # panel a shows a volume of this 
 
 QUANT = WORK / "simulations_quant.npz"
 QUAL_CACHE = WORK / "simulations_qual.npz"
-OUT = ROOT / "results/main/simulations.pdf"
+OUT = DATA_ROOT / "results/main/simulations.pdf"
 
 ARMS = (("standard", CMP, "Standard MPPCA"), ("proposed", COU, "Proposed"))
 MIXES = (("level", "Spatially varying level only", "sd_d", r"Spread of the noise level (std($d$))"),
