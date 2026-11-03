@@ -18,3 +18,6 @@ dist/
 
 *.nii
 *.nii.gz
+
+# Local notes, not tracked.
+/docs/local/
