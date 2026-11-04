@@ -1,3 +1,6 @@
 [submodule "submodules/camppca"]
 	path = submodules/camppca
 	url = git@github.com:quantitative-mri-and-in-vivo-histology/camppca.git
+[submodule "submodules/NORDIC_Raw"]
+	path = submodules/NORDIC_Raw
+	url = https://github.com/SteenMoeller/NORDIC_Raw.git
