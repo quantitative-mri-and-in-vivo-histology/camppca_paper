@@ -22,14 +22,11 @@ from multiprocessing import Pool
 import nibabel as nib
 import numpy as np
 
+from camppca_paper.correct import B0_MAX, bet_mask, eddy, topup
 from camppca_paper.on_harmony import PARTICIPANTS, SOURCE, all_sessions
-from camppca_paper.tools import run
 
-B0_MAX = 100
 N_B0 = 2
 READOUT_S = 0.05
-EDDY_FLAGS = ("--repol", "--data_is_shelled", "--dont_peas", "--flm=quadratic", "--slm=none",
-              "--initrand=1")
 
 
 def acqp_row(stem):
@@ -40,7 +37,7 @@ def acqp_row(stem):
     return [*v, READOUT_S]
 
 
-def topup(session):
+def run_topup(session):
     out = session.native
     if (out / "mask_bet.nii.gz").exists():
         return session, None
@@ -54,34 +51,18 @@ def topup(session):
         b0s += [np.asarray(img.dataobj[..., int(j)], np.float32) for j in use]
         rows += [acqp_row(stem)] * len(use)
         affine = img.affine if affine is None else affine
-    out.mkdir(parents=True, exist_ok=True)
-    nib.save(nib.Nifti1Image(np.stack(b0s, -1), affine), out / "b0_pairs.nii.gz")
-    np.savetxt(out / "acqp_topup.txt", rows, fmt="%g")
-    cnf = "b02b0.cnf" if all(n % 2 == 0 for n in b0s[0].shape) else "b02b0_1.cnf"
-    run("topup", f"--imain={out / 'b0_pairs.nii.gz'}", f"--datain={out / 'acqp_topup.txt'}",
-        f"--config={cnf}", f"--out={out / 'topup'}", f"--iout={out / 'b0_corrected'}",
-        log=out / "topup.log")
-    corrected = nib.load(out / "b0_corrected.nii.gz")
-    nib.save(nib.Nifti1Image(np.asarray(corrected.dataobj, np.float32).mean(-1), corrected.affine),
-             out / "b0_mean.nii.gz")
-    run("bet", out / "b0_mean.nii.gz", out / "b0_brain", "-m", "-f", 0.2)
-    (out / "b0_brain_mask.nii.gz").rename(out / "mask_bet.nii.gz")
+    topup(b0s, rows, affine, out)
+    bet_mask(out)
     return session, f"{session.subject} {session.name}: topup  [{time.time() - t0:.0f}s]"
 
 
-def eddy(session):
+def run_eddy(session):
     out = session.native
     if (out / "eddy.eddy_parameters").exists():
         return
     t0 = time.time()
     stem = SOURCE / session.dwi("AP")
-    n = nib.load(out / "standard.nii.gz").shape[3]
-    np.savetxt(out / "acqp.txt", [acqp_row(stem)], fmt="%g")
-    np.savetxt(out / "index.txt", np.ones((1, n), int), fmt="%d")
-    run("eddy_cuda11.0", f"--imain={out / 'standard.nii.gz'}", f"--mask={out / 'mask_bet.nii.gz'}",
-        f"--acqp={out / 'acqp.txt'}", f"--index={out / 'index.txt'}", f"--bvecs={stem}.bvec",
-        f"--bvals={stem}.bval", f"--topup={out / 'topup'}", f"--out={out / 'eddy'}",
-        *EDDY_FLAGS, log=out / "eddy.log")
+    eddy(out / "standard.nii.gz", acqp_row(stem), f"{stem}.bval", f"{stem}.bvec", out)
     print(f"  {session.subject} {session.name}: eddy  [{time.time() - t0:.0f}s]", flush=True)
 
 
@@ -94,10 +75,10 @@ def main():
     todo = [s for subject in a.subjects or list(PARTICIPANTS) for s in all_sessions(subject)]
     with Pool(a.workers) as cpu, Pool(a.gpu_workers) as gpu:
         jobs = []
-        for session, line in cpu.imap_unordered(topup, todo):
+        for session, line in cpu.imap_unordered(run_topup, todo):
             if line:
                 print(f"  {line}", flush=True)
-            jobs.append(gpu.apply_async(eddy, (session,)))
+            jobs.append(gpu.apply_async(run_eddy, (session,)))
         for job in jobs:
             job.get()
 
