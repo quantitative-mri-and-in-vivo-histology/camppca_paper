@@ -22,3 +22,6 @@ WORK = DATA_ROOT / "analyses/subject_phantom"
 
 # eTPM tissue priors, from scripts/datasets/segmentation_priors/.
 ETPM = DATA_ROOT / "source/segmentation_priors/eTPM.nii"
+
+# Numbers the figures read.
+RESULTS = DATA_ROOT / "results"
