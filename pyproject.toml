@@ -16,6 +16,7 @@ dependencies = [
     "nibabel>=5.0.0",
     "matplotlib>=3.7.0",
     "dipy>=1.12",
+    "awscli",
 ]
 
 [project.optional-dependencies]
