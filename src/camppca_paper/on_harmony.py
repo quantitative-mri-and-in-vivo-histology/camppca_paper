@@ -8,11 +8,11 @@ cross-scanner set is one session per scanner, the repeat scanner's first.
 from dataclasses import dataclass
 from pathlib import Path
 
-from .paths import DATA_ROOT
+from .paths import DATA_ROOT, OPENNEURO
 
 ACCESSION = "ds004712"
 VERSION = "2.0.1"
-SOURCE = DATA_ROOT / "source/on_harmony" / ACCESSION
+SOURCE = OPENNEURO / ACCESSION
 WORK = DATA_ROOT / "analyses/on_harmony"
 
 SITES = {"OXF1PRI": "Prisma 32ch", "OXF2PRI": "Prisma 64ch", "OXF3TRI": "Trio",

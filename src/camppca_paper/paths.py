@@ -8,6 +8,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 DATA_ROOT = Path(os.environ.get("DATA_PATH") or ROOT / "data")
 
+# OpenNeuro releases, one folder per accession.
+OPENNEURO = DATA_ROOT / "source/openneuro"
+# EDDEN, ds004666. The phantom and the 0.9 mm runs come from it.
+EDDEN = OPENNEURO / "ds004666"
+
 # Subject phantom, built by scripts/datasets/subject_phantom/.
 DATA = DATA_ROOT / "raw/subject_phantom"
 DWI = DATA / "phantom_sh4.nii.gz"

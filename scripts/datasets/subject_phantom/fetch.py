@@ -10,11 +10,11 @@ Paper:   Manzano-Patron et al., Imaging Neuroscience, 2024. https://doi.org/10.1
 """
 
 from camppca_paper.openneuro import fetch
-from camppca_paper.paths import DATA_ROOT
+from camppca_paper.paths import EDDEN
 
 ACCESSION = "ds004666"
 VERSION = "1.0.8"
-ROOT = DATA_ROOT / "source/subject_phantom" / ACCESSION
+ROOT = EDDEN
 
 AVERAGE = "derivatives/ses-2mm/dwi/AVG_complex/sub-01_ses-2mm_dir-AP_AVG_complex_dwi_processed.nii.gz"
 BRAIN_MASK = "derivatives/ses-2mm/masks/nodif_brain_mask.nii.gz"

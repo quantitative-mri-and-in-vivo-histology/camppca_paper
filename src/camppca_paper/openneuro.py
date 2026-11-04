@@ -1,8 +1,8 @@
-"""Download files of an OpenNeuro release, checked against the SHA256 the release records.
+"""Download files of an OpenNeuro release, checked against the hash the release records.
 
 The release is cloned shallow for its file tree, which holds a git-annex pointer per file. Each
 file is then downloaded from OpenNeuro's S3 bucket by its path, and checked against the size
-and SHA256 in its pointer.
+and hash in its pointer. Most releases record SHA256, some older ones MD5.
 """
 
 import hashlib
@@ -10,8 +10,8 @@ import re
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
-# git-annex key in a pointer's symlink target: size and SHA256 of the content.
-KEY = re.compile(r"SHA256E-s(\d+)--([0-9a-f]{64})")
+# git-annex key in a pointer's symlink target: hash type, size and hash of the content.
+KEY = re.compile(r"(SHA256|MD5)E-s(\d+)--([0-9a-f]{64}|[0-9a-f]{32})")
 
 
 def clone(accession, version, root):
@@ -30,24 +30,25 @@ def clone(accession, version, root):
 
 
 def annexed(root, rel):
-    """Where an annexed file's content goes, and its size and SHA256.
+    """Where an annexed file's content goes, its size, and its hash.
 
     Args:
         root: The clone.
         rel: Path relative to the release root.
 
     Returns:
-        `(path, size, sha256)`, or None if git stores the file directly.
+        `(path, size, algorithm, hash)`, or None if git stores the file directly.
+        `algorithm` is "sha256" or "md5".
     """
     link = root / rel
     if not link.is_symlink():
         return None
-    size, sha = KEY.search(str(link.readlink())).groups()
-    return (link.parent / link.readlink()).resolve(), int(size), sha
+    algorithm, size, digest = KEY.search(str(link.readlink())).groups()
+    return (link.parent / link.readlink()).resolve(), int(size), algorithm.lower(), digest
 
 
-def sha256(path):
-    h = hashlib.sha256()
+def checksum(path, algorithm="sha256"):
+    h = hashlib.new(algorithm)
     with open(path, "rb") as fh:
         for block in iter(lambda: fh.read(1 << 22), b""):
             h.update(block)
@@ -58,17 +59,17 @@ def fetch_file(accession, root, rel):
     """Download one annexed file unless it is there already, then check it.
 
     Raises:
-        RuntimeError: If the content does not match the release's SHA256.
+        RuntimeError: If the content does not match the release's hash.
     """
     entry = annexed(root, rel)
     if entry is None:
         return
-    dest, size, sha = entry
+    dest, size, algorithm, digest = entry
     if not (dest.exists() and dest.stat().st_size == size):
         subprocess.run(["curl", "-fsSL", "--retry", "3", "--create-dirs", "-o", str(dest),
                         f"https://s3.amazonaws.com/openneuro.org/{accession}/{rel}"], check=True)
-    if sha256(dest) != sha:
-        raise RuntimeError(f"sha256 mismatch: {rel}")
+    if checksum(dest, algorithm) != digest:
+        raise RuntimeError(f"{algorithm} mismatch: {rel}")
 
 
 def fetch(accession, version, root, files, workers=8):
