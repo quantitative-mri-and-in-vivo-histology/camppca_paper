@@ -5,6 +5,7 @@
     CoV         per map, across the runs, median over white matter: the T1's white-matter
                 posterior above WM_PV, inside the frame's mask
     correction  per run, Proposed's noise level over Standard's, minus 1, in %
+    noise       per run, each arm's noise level over the real part's mean b0, in %
 
 Out: data/results/edden/within.json.
 
@@ -16,8 +17,8 @@ import json
 import nibabel as nib
 import numpy as np
 
-from camppca_paper.edden import RUNS, WORK, native
-from camppca_paper.metrics import MAPS, correction, cov, signal
+from camppca_paper.edden import RUNS, WORK, bval, native
+from camppca_paper.metrics import MAPS, correction, cov, noise_level, signal
 from camppca_paper.paths import RESULTS
 
 ARMS = ("raw", "standard", "proposed", "nordic2")
@@ -29,6 +30,8 @@ if __name__ == "__main__":
     wm = mask & (np.asarray(nib.load(frame / "wm_prob.nii.gz").dataobj) > WM_PV)
     res = {"runs": list(RUNS), "cov": cov(maps, list(RUNS), wm, ARMS),
            "correction": {r: correction(native(r)) for r in RUNS},
+           "noise": {r: noise_level(native(r), native(r) / "real.nii.gz", np.loadtxt(bval()).ravel())
+                     for r in RUNS},
            "signal": signal(frame, list(RUNS), mask, ARMS)}
     (RESULTS / "edden").mkdir(parents=True, exist_ok=True)
     (RESULTS / "edden" / "within.json").write_text(json.dumps(res, indent=1))
