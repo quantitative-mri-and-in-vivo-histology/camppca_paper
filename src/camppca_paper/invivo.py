@@ -5,9 +5,11 @@
             volume whose direction is closest to the first session's VOLUME, divided by that
             session's mean b0 in the mask. One grey scale within; across scanners one per scanner
             for the regions, ROI_WINDOW percentiles of its Noisy region
-    below   the noise level correction per session (across), the signal error (within), and the
-            DTI and DKI coefficient of variation, every participant joined across the arms, a
-            bar at each median
+    below   the noise level of Standard MPPCA and Proposed over the mean b0 (one point per
+            participant within, per scanner across), the signal error (within), and the DTI and
+            DKI coefficient of variation, every participant joined across the arms, a bar at each
+            median. Bars have width W, the arms of a group are STEP apart and the groups GAP apart,
+            and each panel's width follows its groups
 
 Reads the pipeline's frames (data/analyses/on_harmony/<subject>/frames/<set>/) and metrics
 (data/results/on_harmony/<set>.json).
@@ -33,6 +35,8 @@ SLICE_AT = 0.6                  # axial slice, fraction of the mask's extent fro
 BOX = (0.30, 0.70, 0.60, 0.98)  # region: row and column fractions of the brain's bounding box
 ROI_WINDOW = (1, 99)            # across scanners: each region between these Noisy percentiles
 ROW_H = 1.62                    # inches per row of point panels
+W, STEP, GAP = 0.22, 0.27, 0.25  # bar width, arm spacing in a group, extra space between groups
+PANEL_GAP = 0.1                 # between point panels, figure fraction
 VENDOR = {"OXF1PRI": "Siemens", "OXF2PRI": "Siemens", "OXF3TRI": "Siemens", "NOT1ACH": "Philips",
           "NOT2ING": "Philips", "NOT4GEP": "GE", "OXF4GEP": "GE"}
 CROSS_ORDER = ("OXF1PRI", "OXF2PRI", "OXF3TRI", "NOT1ACH", "NOT2ING", "OXF4GEP", "NOT4GEP")
@@ -89,8 +93,8 @@ def geometry(m, n):
 def draw_images(fig, spec, which, arrows=None):
     """`arrows` maps a session's run number (within) or site (cross) to (row, column, tail row offset, tail column
     offset) tuples within
-    the region; each gets a red arrow in the Standard MPPCA row, pointing at texture that Standard keeps and
-    Proposed removes, its tail at the offset from the tip."""
+    the region; each gets a red arrow in every row, pointing at texture that Standard keeps and Proposed removes,
+    its tail at the offset from the tip."""
     ims, m = IMAGES[which]
     ses = shown_sessions(which)
     (r0, r1, c0, c1), (y0, y1, x0, x1), widths = geometry(m, len(ses))
@@ -118,10 +122,9 @@ def draw_images(fig, spec, which, arrows=None):
             if i == 0:
                 bx.set_title(label(s), fontsize=8)
             for y, x, dy, dx in (arrows or {}).get(s.run if which == "within" else s.site, ()):
-                if arm == "standard":
-                    bx.annotate("", xy=(x, y), xytext=(x + dx, y + dy), annotation_clip=False,
-                                arrowprops=dict(arrowstyle="-|>", color="#D62728", lw=1.6, shrinkA=0, shrinkB=1.5,
-                                                mutation_scale=9))
+                bx.annotate("", xy=(x, y), xytext=(x + dx, y + dy), annotation_clip=False,
+                            arrowprops=dict(arrowstyle="-|>", color="#D62728", lw=1.6, shrinkA=0, shrinkB=1.5,
+                                            mutation_scale=9))
             axes.append(bx)
         for a in axes:
             a.set_xticks([])
@@ -135,17 +138,40 @@ def signal_bars(ax, d, subjects):
     error as points joined across the arms."""
     arms = (("standard", CMP), ("proposed", COU))
     for i, b in enumerate((1000, 2000)):
-        pos = [i - 0.2, i + 0.2]
+        pos = [centre(i, 2) - STEP / 2, centre(i, 2) + STEP / 2]
         for k, (arm, col) in enumerate(arms):
             var = np.mean([d[s]["signal"][f"b{b}"][arm]["var_pct"] for s in subjects])
             b2 = np.mean([d[s]["signal"][f"b{b}"][arm]["bias2_pct"] for s in subjects])
-            ax.bar(pos[k], var, 0.34, color=col, alpha=0.3, ec=col, lw=0.6, zorder=1)
-            ax.bar(pos[k], b2, 0.34, bottom=var, color=col, ec="k", lw=0.4, zorder=1)
+            ax.bar(pos[k], var, W, color=col, alpha=0.3, ec=col, lw=0.6, zorder=1)
+            ax.bar(pos[k], b2, W, bottom=var, color=col, ec="k", lw=0.4, zorder=1)
         vals = np.array([[d[s]["signal"][f"b{b}"][arm]["mse_pct"] for arm, _ in arms] for s in subjects])
         for row in vals:
             ax.plot(pos, row, "-", color="0.4", lw=0.5, zorder=2)
         for k, (_, col) in enumerate(arms):
-            ax.plot(np.full(len(vals), pos[k]), vals[:, k], "o", color=col, mec="k", mew=0.4, ms=3, zorder=3)
+            ax.plot(np.full(len(vals), pos[k]), vals[:, k], "o", color=col, mec="k", mew=0.4, ms=4, zorder=3)
+
+
+def centre(i, n):
+    """The centre of group i of a panel whose groups have n arms."""
+    return i * (n * STEP + GAP)
+
+
+def noise_points(ax, which):
+    """Standard MPPCA's and Proposed's noise level (`metrics.py`), joined per point, a bar at each median.
+    Within, a point is a participant's mean over its sessions; across, a scanner's mean over its participants."""
+    d = metrics(which)
+    if which == "within":
+        groups = [list(r["noise"].values()) for r in d.values()]
+    else:
+        groups = [[v for r in d.values() for k, v in r["noise"].items() if k[:7] == site] for site in CROSS_ORDER]
+    arms = (("standard", CMP), ("proposed", COU))
+    v = np.array([[np.mean([x[arm] for x in g]) for arm, _ in arms] for g in groups])
+    pos = [-STEP / 2, STEP / 2]
+    for row in v:
+        ax.plot(pos, row, "-", color="0.6", lw=0.6, zorder=2)
+    for k, (_, col) in enumerate(arms):
+        ax.plot(np.full(len(v), pos[k]), v[:, k], "o", color=col, mec="k", mew=0.4, ms=4, zorder=3)
+        ax.bar(pos[k], np.median(v[:, k]), W, color=col, alpha=0.3, ec=col, lw=0.6, zorder=1)
 
 
 def correction_points(ax, which):
@@ -156,8 +182,9 @@ def correction_points(ax, which):
     rng = np.random.default_rng(0)
     for i, site in enumerate(correction_sites(which)):
         v = [y for r in d.values() for session, y in r["correction"].items() if session[:7] == site]
-        ax.plot(i + rng.uniform(-0.12, 0.12, len(v)), v, "o", color=COU, mec="k", mew=0.4, ms=4, zorder=3)
-        ax.hlines(np.median(v), i - 0.18, i + 0.18, color=COU, lw=2.2, zorder=1)
+        x = centre(i, 2)
+        ax.plot(x + rng.uniform(-0.12, 0.12, len(v)), v, "o", color=COU, mec="k", mew=0.4, ms=4, zorder=3)
+        ax.hlines(np.median(v), x - 0.18, x + 0.18, color=COU, lw=2.2, zorder=1)
 
 
 def correction_sites(which):
@@ -181,52 +208,58 @@ def rows(which, correction=False):
     bars = ("Signal level", "MSE relative to Noisy [%]", [("b 1000", None), ("b 2000", None)], None,
             lambda ax: signal_bars(ax, d, list(d)))
     scanners = [(SITES[site], None) for site in correction_sites(which)]
-    first = [("Noise level correction", "$\\sigma_{proposed} / \\sigma_{standard} - 1$ [%]",
-              scanners, None,
-              lambda ax: correction_points(ax, which))] if correction else []
+    first = [("Noise level", "$\\hat\\sigma$ / mean b0 [%]", [("", None)], None, lambda ax: noise_points(ax, which))]
+    first += [("Noise level correction", "$\\sigma_{proposed} / \\sigma_{standard} - 1$ [%]",
+               scanners, None,
+               lambda ax: correction_points(ax, which))] if correction else []
     if which == "cross":
         return list(d), [first + maps]
     return list(d), [first + [bars] + maps]
 
 
-def draw_row(fig, spec, subjects, panels, letters):
-    """One row of point panels: every participant joined across the arms, a bar at each median."""
-    # a panel of many groups (the correction by scanner) packs them closer, so it does not take the row
-    grid = GridSpecFromSubplotSpec(1, len(panels), subplot_spec=spec,
-                                   width_ratios=[len(p[2]) if len(p[2]) <= 3 else 0.55 * len(p[2]) for p in panels],
-                                   wspace=0.5 if len(panels) > 3 else 0.3)
-    axes = [fig.add_subplot(grid[0, i]) for i in range(len(panels))]
-    for ax, (title, ylabel, groups, arms, *draw), letter in zip(axes, panels, letters, strict=True):
+def draw_row(fig, spec, subjects, panels):
+    """One row of point panels: every participant joined across the arms, a bar at each median. The panels are
+    PANEL_GAP apart and as wide as their groups. A group without a value function is left to the panel's own
+    drawing, which then gets the arms only for the spacing."""
+    n_arms = [len(p[3]) if p[3] else 2 for p in panels]
+    spans = [len(p[2]) * (n * STEP + GAP) for p, n in zip(panels, n_arms, strict=True)]
+    box = spec.get_position(fig)
+    unit = (box.width - PANEL_GAP * (len(panels) - 1)) / sum(spans)
+    axes, x = [], box.x0
+    for span in spans:
+        axes.append(fig.add_axes((x, box.y0, span * unit, box.height)))
+        x += span * unit + PANEL_GAP
+    for ax, (title, ylabel, groups, arms, *draw), n in zip(axes, panels, n_arms, strict=True):
         if draw:
             draw[0](ax)
-        step = 0.4 if arms and len(arms) == 2 else 0.27
         for i, (_, get) in enumerate(groups if arms else ()):
+            if get is None:
+                continue
             vals = np.array([[get(s, a) for a, _ in arms] for s in subjects])
-            pos = [i + (k - (len(arms) - 1) / 2) * step for k in range(len(arms))]
+            pos = [centre(i, n) + (k - (n - 1) / 2) * STEP for k in range(n)]
             for row in vals:
                 ax.plot(pos, row, "-", color="0.6", lw=0.6, zorder=2)
             for k, (_, col) in enumerate(arms):
                 ax.plot(np.full(len(vals), pos[k]), vals[:, k], "o", color=col, mec="k", mew=0.4, ms=4, zorder=3)
-                ax.hlines(np.median(vals[:, k]), pos[k] - 0.1, pos[k] + 0.1, color=col, lw=2.2, zorder=1)
-        ax.set_xticks(range(len(groups)))
+                ax.bar(pos[k], np.median(vals[:, k]), W, color=col, alpha=0.3, ec=col, lw=0.6, zorder=1)
+        labels = [g[0] for g in groups]
+        ax.set_xticks([centre(i, n) for i in range(len(groups))] if any(labels) else [])
         if len(groups) > 3:
-            ax.set_xticklabels([g[0] for g in groups], fontsize=8, rotation=40, ha="right", rotation_mode="anchor")
-        else:
-            ax.set_xticklabels([g[0] for g in groups], fontsize=9)
-        ax.set_xlim(-0.6, len(groups) - 0.4)
+            ax.set_xticklabels(labels, fontsize=8, rotation=40, ha="right", rotation_mode="anchor")
+        elif any(labels):
+            ax.set_xticklabels(labels, fontsize=9)
+        ax.set_xlim(-(n * STEP + GAP) / 2, centre(len(groups) - 1, n) + (n * STEP + GAP) / 2)
         ax.set_ylim(bottom=0)
         ax.set_ylabel(ylabel, fontsize=8)
         ax.set_title(title, fontsize=10)
         ax.tick_params(labelsize=8)
-        ax.text(-0.22 if len(groups) < 3 else -0.15, 1.08, letter, transform=ax.transAxes, fontsize=14,
-                fontweight="bold")
     return axes
 
 
 class Key(HandlerBase):
     """Legend key drawn from one colour per arm: "bars", small upright bars side by side, light body under a dark
-    cap, as the stacked bars; "median", short thick stripes on top of each other, as the median marks. The
-    instance is its own handle."""
+    cap, as the stacked bars; "median", short thick stripes on top of each other, as the median marks; "bar", a
+    light bar; "point", the same with a point at its middle. The instance is its own handle."""
 
     def __init__(self, style, label, colours):
         super().__init__()
@@ -246,6 +279,14 @@ class Key(HandlerBase):
                 out.append(Rectangle((x, y0 + 0.8 * height), w, 0.3 * height, transform=trans, fc=col, ec="k",
                                      lw=0.4))
             return out
+        if self.style in ("bar", "point"):
+            col, w = self.colours[0], 0.5 * width
+            out = [Rectangle((x0 + (width - w) / 2, y0 - 0.25 * height), w, 1.25 * height, transform=trans, fc=col,
+                             alpha=0.3, ec=col, lw=0.6)]
+            if self.style == "point":
+                out.append(plt.Line2D([x0 + width / 2], [y0 + 0.375 * height], ls="", marker="o", color=col, mec="k",
+                                      mew=0.4, ms=4, transform=trans))
+            return out
         n, gap = len(self.colours), 0.06 * height
         h = (1.4 * height - (n - 1) * gap) / n
         top = y0 + height / 2 + (n * h + (n - 1) * gap) / 2
@@ -256,7 +297,7 @@ class Key(HandlerBase):
         return out
 
 
-def figure(which, correction=True, fig_w=8.64, top_h=0.14, row_h=ROW_H, bars_key_inside=False, left=0.055,
+def figure(which, correction=False, fig_w=8.64, top_h=0.14, row_h=ROW_H, bars_key_inside=False, left=0.055,
            arrows=None):
     """The within or cross figure: a, the images; below, the point panels; the legend between. `fig_w` is the width in inches at fixed font size, `top_h` the room above the
     images and `row_h` the height of a row of point panels, in inches. `bars_key_inside` moves the variance/bias
@@ -278,25 +319,31 @@ def figure(which, correction=True, fig_w=8.64, top_h=0.14, row_h=ROW_H, bars_key
                 which, arrows)
     block = GridSpec(k, 1, figure=fig, left=left, right=right, top=bottom_h / height + block_h / height,
                      bottom=bottom_h / height, hspace=gap_h / row_h)
-    letters = iter("bcdefg")
-    first, bars_ax = None, None
+    first, bars_ax, placed = None, None, []
     for r, panels in enumerate(point_rows):
-        axes = draw_row(fig, block[r], subjects, panels, [next(letters) for _ in panels])
+        axes = draw_row(fig, block[r], subjects, panels)
+        placed += axes
         first = first or axes[0]
         bars_ax = next((ax for ax, p in zip(axes, panels, strict=True) if p[0] == "Signal level"), bars_ax)
-    handles = [plt.Line2D([], [], color=c, marker="o", mec="k", mew=0.4, ls="", ms=5, label=t) for _, t, c in ARMS]
-    keys = [Key("median", f"Median across {'scanners' if which == 'within' else 'subjects'}",
-                    [c for *_, c in ARMS])]
-    bars_key = Key("bars", "Mean variance (bright) and bias$^2$ (dark)", (CMP, COU))
+    handles = [Key("point", t, (c,)) for _, t, c in ARMS]
     if which == "within" and not bars_key_inside:
-        keys += [bars_key]
-    handles += keys
-    handler = {h: h for h in keys}
+        handles += [Key("bars", "Variance (bright) and bias$^2$ (dark)", (CMP, COU))]
     if which == "within" and bars_key_inside and bars_ax is not None:
-        inside = Key("bars", "Mean variance (bright)\nand bias$^2$ (dark)", (CMP, COU))
+        inside = Key("bars", "Variance (bright)\nand bias$^2$ (dark)", (CMP, COU))
         bars_ax.set_ylim(top=1.35 * bars_ax.get_ylim()[1])
-        bars_ax.legend(handles=[inside], handler_map={inside: inside}, frameon=False, fontsize=7,
+        bars_ax.legend(handles=[inside], handler_map={inside: inside}, frameon=False, fontsize=6.5,
                        loc="upper left", handlelength=1.6, labelspacing=0.2)
-    fig.legend(handles=handles, handler_map=handler, frameon=False, fontsize=8, ncol=len(handles), loc="center",
-               bbox_to_anchor=(0.5, first.get_position().y1 + 0.42 / height))
+    fig.legend(handles=handles, handler_map={h: h for h in handles}, frameon=False, fontsize=8, ncol=len(handles),
+               loc="center", bbox_to_anchor=(0.5, first.get_position().y1 + 0.42 / height))
+    panel_letters(fig, placed)
     return fig
+
+
+def panel_letters(fig, axes, letters="bcdefg"):
+    """A bold letter per panel at the left of its y label, on its title's line."""
+    fig.canvas.draw()
+    r, inv = fig.canvas.get_renderer(), fig.transFigure.inverted()
+    for ax, letter in zip(axes, letters, strict=False):
+        x = inv.transform(ax.yaxis.label.get_window_extent(r).p0)[0]
+        y = inv.transform(ax.title.get_window_extent(r).p0)[1]
+        fig.text(x, y, letter, fontsize=14, fontweight="bold", ha="left", va="bottom")
