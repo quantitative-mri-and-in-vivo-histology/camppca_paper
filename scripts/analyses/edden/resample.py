@@ -1,8 +1,7 @@
 """Stage 7: every arm of every run into the diffusion template, in one resampling
 (`camppca_paper.registration.resample`).
 
-The arms are the real part (raw), Standard, Proposed and NORDIC2. NORDIC2 is magnitude, written
-in the input's units.
+The arms are the real part (raw), Standard, Proposed and NORDIC2's real part (nordic2_real.py).
 
 Out: data/analyses/edden/frames/ (<run>_<arm>.nii.gz, <run>.bval, <run>.bvec, mask.nii.gz,
 wm_prob.nii.gz). Skipped when done.
@@ -24,7 +23,7 @@ if __name__ == "__main__":
         todo = [(r, native(r), bval(), {"raw": native(r) / "real.nii.gz",
                                         "standard": native(r) / "standard.nii.gz",
                                         "proposed": native(r) / "proposed.nii.gz",
-                                        "nordic2": NORDIC2 / f"{r}_nordic2_.nii.gz"})
+                                        "nordic2": NORDIC2 / f"{r}_nordic2_real.nii.gz"})
                 for r in RUNS]
         check = resample(WORK / "dwi", dest, todo, a.workers)
         print(f"  resampled, lowest FA check r {min(check.values()):.4f}", flush=True)
