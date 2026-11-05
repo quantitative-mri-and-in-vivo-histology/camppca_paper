@@ -13,6 +13,9 @@ OPENNEURO = DATA_ROOT / "source/openneuro"
 # EDDEN, ds004666. The phantom and the 0.9 mm runs come from it.
 EDDEN = OPENNEURO / "ds004666"
 
+# Ex vivo mouse brain, Zenodo 10200469.
+EXVIVO = DATA_ROOT / "source/exvivo_mouse"
+
 # Subject phantom, built by scripts/datasets/subject_phantom/.
 DATA = DATA_ROOT / "raw/subject_phantom"
 DWI = DATA / "phantom_sh4.nii.gz"
