@@ -1,10 +1,22 @@
 """The in vivo panel: 28 scanner configurations without interpolation, two subjects each."""
 
+import json
 from dataclasses import dataclass
+from pathlib import Path
+
+import nibabel as nib
+import numpy as np
 
 from .paths import DATA_ROOT, OPENNEURO
 
 HCP = DATA_ROOT / "source/hcp"
+WORK = DATA_ROOT / "analyses/panel"
+SHELL_MAX = 2500
+PHILIPS = ("onh04_achieva_sw56", "onh05_achieva_sw53", "onh06_ingenia_r15", "onh07_ingenia_r2")
+GE = ("ideas01_mr750_qs", "onh08_mr750", "onh09_premier48", "onh10_premier21", "sdsu01_mr750_8ch",
+      "unam02_mr750_hb")
+# Phase-encode array axis where the release records none.
+PE_AXIS = {"hcp01_skyra_sense1": 0, "hcp02_7t_grappa3": 1, "ideas01_mr750_qs": 1}
 
 
 @dataclass(frozen=True)
@@ -35,6 +47,15 @@ class Scan:
     @property
     def root(self):
         return HCP if self.source == "HCP_1200" else OPENNEURO / self.source
+
+    @property
+    def name(self):
+        return f"{self.config}_{self.sub}"
+
+    @property
+    def work(self):
+        """Where the analyses write this scan's outputs."""
+        return WORK / self.config / self.sub
 
 
 # config, source, version, session, series, subjects
@@ -77,3 +98,45 @@ _CONFIGS = [
 SCANS = [Scan(c, src, v, sub, ses, series)
          for c, src, v, ses, series, subs in _CONFIGS for sub in subs]
 CONFIGS = [c[0] for c in _CONFIGS]
+
+
+def vendor(config):
+    return "Philips" if config in PHILIPS else "GE" if config in GE else "Siemens"
+
+
+def load(scan):
+    """One scan's series, its parts joined, up to b SHELL_MAX.
+
+    A shell counts by its b-value rounded to 100, so b 2510 is b 2500.
+
+    Returns:
+        `(data (X, Y, Z, N) float32, bval (N,), bvec (3, N), affine, phase-encode axis)`.
+    """
+    parts, bval, bvec, affine = [], [], [], None
+    for stem in scan.stems():
+        p = scan.root / stem
+        img = nib.load(f"{p}.nii.gz")
+        if affine is not None and not np.allclose(img.affine, affine, atol=1e-3):
+            raise ValueError(f"{scan.name}: parts on different grids")
+        affine = img.affine
+        parts.append(np.asarray(img.dataobj, np.float32))
+        bval.append(np.loadtxt(f"{p}.bval").ravel())
+        v = np.atleast_2d(np.loadtxt(f"{p}.bvec"))
+        bvec.append(v if v.shape[0] == 3 else v.T)
+    bval, bvec = np.concatenate(bval), np.concatenate(bvec, axis=1)
+    keep = np.round(bval, -2) <= SHELL_MAX
+    data = np.concatenate(parts, axis=3)[..., keep]
+    return data, bval[keep], bvec[:, keep], affine, pe_axis(scan)
+
+
+def pe_axis(scan):
+    """The phase-encode array axis, from the sidecars or PE_AXIS."""
+    axes = set()
+    for stem in scan.stems():
+        side = Path(f"{scan.root / stem}.json")
+        meta = json.loads(side.read_text()) if side.exists() else {}
+        ped = meta.get("PhaseEncodingDirection") or meta.get("PhaseEncodingAxis")
+        axes.add("ijk".index(ped[0]) if ped else PE_AXIS[scan.config])
+    if len(axes) != 1:
+        raise ValueError(f"{scan.name}: parts differ in phase-encode axis")
+    return axes.pop()
