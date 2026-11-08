@@ -89,7 +89,7 @@ def correction(native):
     return float(100 * (np.median(prop[ok] / std[ok]) - 1))
 
 
-def noise_level(native, series, bval):
+def noise_level(native, series, bval, extra=None):
     """Each arm's noise level relative to the signal, in %: the median sigma over the denoising
     mask, over the mean b0 of the denoised series in the mask.
 
@@ -97,13 +97,12 @@ def noise_level(native, series, bval):
         native: Folder with sigma_standard, sigma_proposed and brain_mask_denoising (.nii.gz).
         series: The series both arms denoised.
         bval: Its b-values.
+        extra: {arm: (X, Y, Z) sigma} of further arms.
     """
     mask = np.asarray(nib.load(native / "brain_mask_denoising.nii.gz").dataobj) > 0
     data = np.asarray(nib.load(series).dataobj, np.float32)
     level = float(data[..., np.asarray(bval) <= 100].mean(-1)[mask].mean())
     del data
-    out = {}
-    for arm in ("standard", "proposed"):
-        sig = np.asarray(nib.load(native / f"sigma_{arm}.nii.gz").dataobj, np.float64)
-        out[arm] = float(100 * np.median(sig[mask & (sig > 0)]) / level)
-    return out
+    sigmas = {arm: np.asarray(nib.load(native / f"sigma_{arm}.nii.gz").dataobj, np.float64)
+              for arm in ("standard", "proposed")} | (extra or {})
+    return {arm: float(100 * np.median(sig[mask & (sig > 0)]) / level) for arm, sig in sigmas.items()}

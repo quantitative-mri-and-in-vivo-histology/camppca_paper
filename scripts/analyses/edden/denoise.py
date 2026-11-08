@@ -1,13 +1,14 @@
-"""Stage 1: the real part of every run, then Standard MPPCA and Proposed on it.
+"""Stage 1: Standard MPPCA and Proposed on every run's magnitude, and on its real part.
 
-    real     `camppca phase` with its defaults: magnitude and phase rotated onto the real axis
-    mask     FSL bet -R -f 0.1 on the mean b0 of the real part, holes filled
+    real     complex only, `camppca phase` with its defaults: magnitude and phase rotated onto
+             the real axis
+    mask     FSL bet -R -f 0.1 on the mean b0 of the input, holes filled
              (`camppca_paper.masks.b0_brain_mask`)
     arms     Standard MPPCA (camppca.denoise_mppca) and Proposed (camppca.denoise_camppca), both
              on every voxel, with camppca's default patch. Proposed estimates its noise model
              inside the mask. NORDIC2 runs separately, see nordic2.m
 
-Out, per run in data/analyses/edden/native/<run>/: real.nii.gz, standard.nii.gz,
+Out, per run in data/analyses/edden/<part>/native/<run>/: real.nii.gz (complex), standard.nii.gz,
 proposed.nii.gz, sigma_standard.nii.gz, sigma_proposed.nii.gz, brain_mask_denoising.nii.gz.
 Finished runs are skipped.
 
@@ -21,23 +22,23 @@ import camppca
 import nibabel as nib
 import numpy as np
 
-from camppca_paper.edden import RUNS, bval, native, series
+from camppca_paper.edden import PARTS, RUNS, bval, native, raw, series
 from camppca_paper.masks import b0_brain_mask
 from camppca_paper.tools import run
 
 B0_MAX = 100
-OUTPUTS = ("real", "standard", "proposed", "sigma_standard", "sigma_proposed", "brain_mask_denoising")
+OUTPUTS = ("standard", "proposed", "sigma_standard", "sigma_proposed", "brain_mask_denoising")
 
 
-def denoise(r):
-    out = native(r)
+def denoise(part, r):
+    out = native(part, r)
     if all((out / f"{name}.nii.gz").exists() for name in OUTPUTS):
         return
     t0 = time.time()
     out.mkdir(parents=True, exist_ok=True)
-    if not (out / "real.nii.gz").exists():
+    if part == "complex" and not (out / "real.nii.gz").exists():
         run("camppca", "phase", series("AP", r, "mag"), series("AP", r, "phase"), out / "real.nii.gz")
-    img = nib.load(out / "real.nii.gz")
+    img = nib.load(raw(part, r))
     data = np.asarray(img.dataobj, np.float32)
     b = np.loadtxt(bval()).ravel()
     mask = b0_brain_mask(data[..., b <= B0_MAX].mean(-1), img.affine, f=0.1, fill_holes=True)
@@ -51,14 +52,15 @@ def denoise(r):
                  out / f"sigma_{arm}.nii.gz")
         patch = got.provenance["patch"]
         del got
-    print(f"  {r}: {data.shape[3]} volumes, patch {patch}  [{time.time() - t0:.0f}s]", flush=True)
+    print(f"  {part} {r}: {data.shape[3]} volumes, patch {patch}  [{time.time() - t0:.0f}s]", flush=True)
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("runs", nargs="*")
-    for r in ap.parse_args().runs or RUNS:
-        denoise(r)
+    for part in PARTS:
+        for r in ap.parse_args().runs or RUNS:
+            denoise(part, r)
 
 
 if __name__ == "__main__":

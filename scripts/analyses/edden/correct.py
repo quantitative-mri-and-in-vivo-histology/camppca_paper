@@ -3,10 +3,10 @@
     topup  the first N_B0 b0s of the AP magnitude and of the PA magnitude of the same run
     mask   FSL bet -R -f 0.1 on topup's mean corrected b0, holes filled
            (`camppca_paper.masks.b0_brain_mask`), as eddy's mask
-    eddy   eddy_cuda11.0 on the Standard MPPCA series (stage 1), so the alignment cannot favour
-           another arm. Only eddy's estimates are used later, in stage 7
+    eddy   eddy_cuda11.0 on the Standard MPPCA series of the input (stage 1), so the alignment
+           cannot favour another arm. Only eddy's estimates are used later, in stage 7
 
-Out, per run in data/analyses/edden/native/<run>/: topup_*, b0_mean.nii.gz, mask_bet.nii.gz,
+Out, per input and run in data/analyses/edden/<part>/native/<run>/: topup_*, b0_mean.nii.gz, mask_bet.nii.gz,
 eddy.*. Finished steps are skipped.
 
     python scripts/analyses/edden/correct.py [--gpu-workers 2] [run ...]
@@ -20,14 +20,15 @@ import nibabel as nib
 import numpy as np
 
 from camppca_paper.correct import B0_MAX, eddy, topup
-from camppca_paper.edden import ACQP, RUNS, bval, bvec, native, series
+from camppca_paper.edden import ACQP, PARTS, RUNS, bval, bvec, native, series
 from camppca_paper.masks import b0_brain_mask
 
 N_B0 = 2
 
 
-def correct(r):
-    out = native(r)
+def correct(task):
+    part, r = task
+    out = native(part, r)
     t0 = time.time()
     if not (out / "b0_mean.nii.gz").exists():
         b0s, rows, affine = [], [], None
@@ -45,7 +46,7 @@ def correct(r):
         nib.save(nib.Nifti1Image(mask.astype(np.uint8), b0.affine), out / "mask_bet.nii.gz")
     if not (out / "eddy.eddy_parameters").exists():
         eddy(out / "standard.nii.gz", ACQP["AP"], bval(), bvec(), out)
-    return f"{r}: topup, mask and eddy  [{time.time() - t0:.0f}s]"
+    return f"{part} {r}: topup, mask and eddy  [{time.time() - t0:.0f}s]"
 
 
 def main():
@@ -54,7 +55,7 @@ def main():
     ap.add_argument("runs", nargs="*")
     a = ap.parse_intermixed_args()
     with Pool(a.gpu_workers) as pool:
-        for line in pool.imap_unordered(correct, a.runs or RUNS):
+        for line in pool.imap_unordered(correct, [(p, r) for p in PARTS for r in a.runs or RUNS]):
             print(f"  {line}", flush=True)
 
 
