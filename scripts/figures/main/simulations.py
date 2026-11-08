@@ -16,7 +16,6 @@ import json
 import camppca
 import matplotlib.pyplot as plt
 import numpy as np
-from camppca.denoiser import _effective_d
 from camppca.denoiser.camppca import denoise_whitened
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize, to_rgb
@@ -79,7 +78,7 @@ def denoise_camppca_at(data, mask, bval, where):
     Returns `(denoised, sigma_hat)`, `sigma_hat` in data units.
     """
     model = camppca.estimate_noise_model(data, bvals=bval, mask=mask, patch=PATCH)
-    d = _effective_d(model.d, model.mask)
+    d = model.effective_d()
     den, sig, _ = denoise_whitened(data, where, model.patch_correlation(PATCH), patch=PATCH,
                                    d_field=d)
     return den, sig * d
