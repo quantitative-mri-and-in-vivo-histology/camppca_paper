@@ -3,15 +3,16 @@
 a       one axial slice of run-01 with a region boxed, then the region in every run, one row per
         arm. Each run shows the b SHELL volume whose direction is closest to run-01's VOLUME,
         divided by that run's mean Noisy b0 on the slice in the mask. One grey scale
-b       noise level of Standard MPPCA and Proposed over the mean b0, mean over the runs
+b       noise level of each denoiser over the mean b0, mean over the runs
 c       signal error per shell, variance (light) and bias squared (dark), as % of Noisy's
 d, e    DTI and DKI coefficient of variation across the runs, median over white matter
 
 Bar width and spacing as in `camppca_paper.invivo`.
 
-Written twice: without NORDIC (main) and with it (supplementary).
+Written twice. Main: the denoisers on the magnitude. Supplementary: the denoisers on the real part
+of the complex data, with NORDIC on the complex data, without c.
 
-Reads data/analyses/edden/frames and data/results/edden/within.json.
+Reads data/analyses/edden/<part>/frames and data/results/edden/<part>.json.
 
     python scripts/figures/main/invivo_within_scanner_edden.py
 """
@@ -25,7 +26,7 @@ import numpy as np
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 from matplotlib.patches import Rectangle
 
-from camppca_paper.edden import RUNS, WORK
+from camppca_paper.edden import RUNS, work
 from camppca_paper.invivo import (
     SHELL,
     SLICE_AT,
@@ -41,19 +42,18 @@ from camppca_paper.invivo import (
 from camppca_paper.paths import RESULTS
 from camppca_paper.style import CMP, CND, CNO, COU
 
-OUT = {"main": RESULTS / "main/invivo_within_scanner_edden.pdf",
-       "nordic": RESULTS / "supplementary/invivo_within_scanner_edden_nordic.pdf"}
-FRAME = WORK / "frames"
+OUT = {"magnitude": RESULTS / "main/invivo_within_scanner_edden.pdf",
+       "complex": RESULTS / "supplementary/invivo_within_scanner_edden_nordic.pdf"}
 ARMS = (("raw", "Noisy", CNO), ("standard", "Standard MPPCA", CMP), ("proposed", "Proposed", COU))
 NORDIC = ("nordic2", "NORDIC", CND)
 
 
-def volumes():
+def volumes(frame):
     """The shown volume of every run and its b0 volumes."""
     out, target = {}, None
     for r in RUNS:
-        bval = np.loadtxt(FRAME / f"{r}.bval").ravel()
-        bvec = np.loadtxt(FRAME / f"{r}.bvec").reshape(3, -1)
+        bval = np.loadtxt(frame / f"{r}.bval").ravel()
+        bvec = np.loadtxt(frame / f"{r}.bvec").reshape(3, -1)
         shell = np.where(np.abs(bval - SHELL) < 100)[0]
         if target is None:
             target = bvec[:, shell[VOLUME]]
@@ -62,20 +62,20 @@ def volumes():
 
 
 def read(task):
-    r, arm, k, v, b0 = task
-    img = nib.load(FRAME / f"{r}_{arm}.nii.gz").dataobj
+    frame, r, arm, k, v, b0 = task
+    img = nib.load(frame / f"{r}_{arm}.nii.gz").dataobj
     return (r, arm), np.asarray(img[:, :, k, v], np.float32), (np.asarray(img[:, :, k, :], np.float32)[..., b0]
                                                                 if arm == "raw" else None)
 
 
-def images(arms):
+def images(frame, arms):
     """The shown slice of every run and arm, and the mask on it."""
-    mask = np.asarray(nib.load(FRAME / "mask.nii.gz").dataobj) > 0
+    mask = np.asarray(nib.load(frame / "mask.nii.gz").dataobj) > 0
     zs = np.where(mask.any((0, 1)))[0]
     k = int(zs[0] + SLICE_AT * (zs[-1] - zs[0]))
-    vols = volumes()
+    vols = volumes(frame)
     with Pool(8) as pool:
-        got = pool.map(read, [(r, arm, k, *vols[r]) for r in RUNS for arm, *_ in arms])
+        got = pool.map(read, [(frame, r, arm, k, *vols[r]) for r in RUNS for arm, *_ in arms])
     level = {r: float(b0[mask[:, :, k]].mean()) for (r, _), _, b0 in got if b0 is not None}
     return {key: np.rot90(x / level[key[0]]) for key, x, _ in got}, np.rot90(mask[:, :, k])
 
@@ -138,24 +138,26 @@ def figure(res, ims, m, arms):
     every = [(a, c) for a, _, c in arms]
     denoised = [(a, c) for a, c in every if a != "raw"]
 
-    two = [(a, c) for a, c in denoised if a in ("standard", "proposed")]
+    two = [(a, c) for a, c in denoised if a in res["noise"][RUNS[0]]]
     noise = {a: np.mean([res["noise"][r][a] for r in RUNS]) for a, _ in two}
 
     def cv(maps):
         return lambda ax: bars(ax, [{a: 100 * res["cov"][x][a] for a, _ in every} for x in maps], every)
 
-    panels = [("Noise level", "$\\hat\\sigma$ / mean b0 [%]", [("", None)], two, lambda ax: bars(ax, [noise], two)),
-              ("Signal level", "MSE relative to Noisy [%]", [("b 1000", None), ("b 2000", None)], denoised,
-               lambda ax: signal_bars(ax, res["signal"], denoised)),
-              ("DTI", "CoV across sessions [%]", [("FA", None), ("MD", None)], every, cv(("FA", "MD"))),
+    panels = [("Noise level", "$\\hat\\sigma$ / mean b0 [%]", [("", None)], two, lambda ax: bars(ax, [noise], two))]
+    if "signal" in res:
+        panels.append(("Signal level", "MSE relative to Noisy [%]", [("b 1000", None), ("b 2000", None)], denoised,
+                       lambda ax: signal_bars(ax, res["signal"], denoised)))
+    panels += [("DTI", "CoV across sessions [%]", [("FA", None), ("MD", None)], every, cv(("FA", "MD"))),
               ("DKI", "CoV across sessions [%]", [("MK", None), ("AK", None), ("RK", None)], every,
                cv(("MK", "AK", "RK")))]
     row = GridSpec(1, 1, figure=fig, left=left, right=right, top=(bottom_h + row_h) / height, bottom=bottom_h / height)
     axes = draw_row(fig, row[0], ["edden"], panels)
-    inside = Key("bars", "Variance (bright)\nand bias$^2$ (dark)", tuple(c for _, c in denoised))
-    axes[1].set_ylim(top=1.35 * axes[1].get_ylim()[1])
-    axes[1].legend(handles=[inside], handler_map={inside: inside}, frameon=False, fontsize=6.5, loc="upper left",
-                   handlelength=2.2, labelspacing=0.2)
+    if "signal" in res:
+        inside = Key("bars", "Variance (bright)\nand bias$^2$ (dark)", tuple(c for _, c in denoised))
+        axes[1].set_ylim(top=1.35 * axes[1].get_ylim()[1])
+        axes[1].legend(handles=[inside], handler_map={inside: inside}, frameon=False, fontsize=6.5, loc="upper left",
+                       handlelength=2.2, labelspacing=0.2)
     handles = [Key("bar", t, (c,)) for _, t, c in arms]
     fig.legend(handles=handles, handler_map={h: h for h in handles}, frameon=False, fontsize=8, ncol=len(handles),
                loc="center", bbox_to_anchor=(0.5, axes[0].get_position().y1 + 0.42 / height))
@@ -164,14 +166,13 @@ def figure(res, ims, m, arms):
 
 
 def main():
-    res = json.loads((RESULTS / "edden/within.json").read_text())
-    ims, m = images(ARMS + (NORDIC,))
-    for key, arms in (("main", ARMS), ("nordic", ARMS[:2] + (NORDIC,) + ARMS[2:])):
-        fig = figure(res, ims, m, arms)
-        OUT[key].parent.mkdir(parents=True, exist_ok=True)
+    for part, arms in (("magnitude", ARMS), ("complex", ARMS[:2] + (NORDIC,) + ARMS[2:])):
+        res = json.loads((RESULTS / f"edden/{part}.json").read_text())
+        fig = figure(res, *images(work(part) / "frames", arms), arms)
+        OUT[part].parent.mkdir(parents=True, exist_ok=True)
         with plt.rc_context({"savefig.pad_inches": 0.02}):
-            fig.savefig(OUT[key])
-        print(f"  wrote {OUT[key]}")
+            fig.savefig(OUT[part])
+        print(f"  wrote {OUT[part]}")
 
 
 if __name__ == "__main__":
