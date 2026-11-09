@@ -84,7 +84,7 @@ def run_quant(signal, mask, bval):
             rows["noisy"].append(a["data"][where])
             rows["standard"].append(std.denoised[where])
             rows["proposed"].append(den_p[where])
-            rows["sigma_standard"].append(std.sigma_hat[where])
+            rows["sigma_standard"].append(std.sigma[where])
             rows["sigma_proposed"].append(sig_p[where])
         out |= {f"{i}_{k}": np.asarray(v, np.float32) for k, v in rows.items()}
         out |= {f"{i}_truth": a["truth"][where], f"{i}_sigma": a["sigma"][where],
@@ -107,8 +107,8 @@ def run_qual(signal, mask, bval):
     prop = camppca.denoise_camppca(a["data"], bvals=bval, mask=mask, patch=PATCH)
     return dict(truth=a["truth"], noisy=a["data"], standard=std.denoised,
                 proposed=prop.denoised, sigma=(a["sigma"] * mask).astype(np.float32),
-                sigma_standard=patch_mean(std.sigma_hat, mask),
-                sigma_proposed=patch_mean(prop.sigma_hat, mask), mask=mask)
+                sigma_standard=patch_mean(std.sigma, mask),
+                sigma_proposed=patch_mean(prop.sigma, mask), mask=mask)
 
 
 # ---------------------------------------------------------------------------- statistics

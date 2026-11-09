@@ -52,5 +52,5 @@ if __name__ == "__main__":
                         ("proposed", lambda: camppca.denoise_camppca(noisy, bvals=bval, mask=mask))):
             got = fn()
             save(arm, got.denoised, img.affine)
-            save(f"sigma_{arm}", got.sigma_hat, img.affine)
+            save(f"sigma_{arm}", got.sigma, img.affine)
             print(f"  {arm}: patch {got.provenance['patch']}  [{time.time() - t0:.0f}s]", flush=True)

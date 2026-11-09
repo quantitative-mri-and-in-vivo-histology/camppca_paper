@@ -43,7 +43,7 @@ def denoise(session):
     for name, x in (("standard", std.denoised), ("proposed", prop.denoised)):
         nib.save(nib.Nifti1Image(np.asarray(x, np.float32), img.affine, img.header),
                  out / f"{name}.nii.gz")
-    for name, x in (("sigma_standard", std.sigma_hat), ("sigma_proposed", prop.sigma_hat)):
+    for name, x in (("sigma_standard", std.sigma), ("sigma_proposed", prop.sigma)):
         nib.save(nib.Nifti1Image(np.asarray(x, np.float32), img.affine), out / f"{name}.nii.gz")
     nib.save(nib.Nifti1Image(mask.astype(np.uint8), img.affine), out / "brain_mask_denoising.nii.gz")
     print(f"  {session.subject} {session.name}: {data.shape[3]} volumes, "

@@ -48,7 +48,7 @@ def denoise(part, r):
         got = fn()
         nib.save(nib.Nifti1Image(np.asarray(got.denoised, np.float32), img.affine, img.header),
                  out / f"{arm}.nii.gz")
-        nib.save(nib.Nifti1Image(np.asarray(got.sigma_hat, np.float32), img.affine),
+        nib.save(nib.Nifti1Image(np.asarray(got.sigma, np.float32), img.affine),
                  out / f"sigma_{arm}.nii.gz")
         patch = got.provenance["patch"]
         del got

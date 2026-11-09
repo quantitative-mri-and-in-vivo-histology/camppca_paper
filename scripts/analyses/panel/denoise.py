@@ -35,13 +35,13 @@ def denoise(scan):
     std = camppca.denoise_mppca(data)
     prop = camppca.denoise_camppca(data, bvals=bval, mask=mask)
 
-    for name, x in (("sigma_standard", std.sigma_hat), ("sigma_proposed", prop.sigma_hat)):
+    for name, x in (("sigma_standard", std.sigma), ("sigma_proposed", prop.sigma)):
         nib.save(nib.Nifti1Image(np.asarray(x, np.float32), affine), out / f"{name}.nii.gz")
     m = prop.model
     np.savez(out / "noise_model.npz", rho=m.rho, d=m.d.astype(np.float32), lag=m.lag,
              patch=np.array(prop.provenance["patch"]))
-    ok = mask & (std.sigma_hat > 0) & (prop.sigma_hat > 0)
-    corr = 100 * (np.median(prop.sigma_hat[ok] / std.sigma_hat[ok]) - 1)
+    ok = mask & (std.sigma > 0) & (prop.sigma > 0)
+    corr = 100 * (np.median(prop.sigma[ok] / std.sigma[ok]) - 1)
     print(f"  {scan.name}: {data.shape[3]} volumes, patch {prop.provenance['patch']}, "
           f"correction {corr:.1f} %  [{time.time() - t0:.0f}s]", flush=True)
 
