@@ -61,7 +61,7 @@ def panel_prediction(ax, rs):
             fontsize=8)
     ax.set_xlabel("Correction ($\\sigma_{proposed} / \\sigma_{standard} - 1$) [%]")
     ax.set_ylabel("Prediction error\n($\\sigma_{pred} / \\sigma_{standard} - 1$) [%]")
-    ax.set_xlim(0, None)
+    ax.set_xlim(0, np.ceil(max(corr)) + 1.5)
     ax.set_ylim(0, None)
     ax.legend(frameon=False, fontsize=8, loc="upper left")
     div = make_axes_locatable(ax)
