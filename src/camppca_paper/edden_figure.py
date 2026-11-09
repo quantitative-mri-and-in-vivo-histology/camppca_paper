@@ -1,21 +1,19 @@
-"""Figure: in vivo repeatability at 0.9 mm (EDDEN, four repeat runs of one subject on one scanner).
+"""Drawing for the in vivo repeatability figures at 0.9 mm (EDDEN, four repeat runs of one subject
+on one scanner).
 
 a       one axial slice of run-01 with a region boxed, then the region in every run, one row per
         arm. Each run shows the b SHELL volume whose direction is closest to run-01's VOLUME,
         divided by that run's mean Noisy b0 on the slice in the mask. One grey scale
 b       noise level of each denoiser over the mean b0, mean over the runs
-c       signal error per shell, variance (light) and bias squared (dark), as % of Noisy's
+c       signal error per shell, variance (light) and bias squared (dark), as % of Noisy's,
+        magnitude only
 d, e    DTI and DKI coefficient of variation across the runs, median over white matter
 
 Bar width and spacing as in `camppca_paper.invivo`.
 
-Written twice. Main: the denoisers on the magnitude. Supplementary: the denoisers on the real part
-of the complex data, with NORDIC on the complex data, without c.
-
 Reads data/analyses/edden/<part>/frames and data/results/edden/<part>.json.
-
-    python scripts/figures/main/invivo_within_scanner_edden.py
 """
+
 
 import json
 from multiprocessing import Pool
@@ -26,8 +24,8 @@ import numpy as np
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 from matplotlib.patches import Rectangle
 
-from camppca_paper.edden import RUNS, work
-from camppca_paper.invivo import (
+from .edden import RUNS, work
+from .invivo import (
     SHELL,
     SLICE_AT,
     STEP,
@@ -39,11 +37,9 @@ from camppca_paper.invivo import (
     geometry,
     panel_letters,
 )
-from camppca_paper.paths import RESULTS
-from camppca_paper.style import CMP, CND, CNO, COU
+from .paths import RESULTS
+from .style import CMP, CND, CNO, COU
 
-OUT = {"magnitude": RESULTS / "main/invivo_within_scanner_edden.pdf",
-       "complex": RESULTS / "supplementary/invivo_within_scanner_edden_nordic.pdf"}
 ARMS = (("raw", "Noisy", CNO), ("standard", "Standard MPPCA", CMP), ("proposed", "Proposed", COU))
 NORDIC = ("nordic2", "NORDIC", CND)
 
@@ -125,7 +121,7 @@ def signal_bars(ax, sig, arms):
             ax.bar(x, row["bias2_pct"], W, bottom=row["var_pct"], color=col, ec="k", lw=0.4)
 
 
-def figure(res, ims, m, arms):
+def draw(res, ims, m, arms):
     fig_w, top_h, row_h, img_left, right, left = 0.9 * 8.64, 0.3, 1.15 * 1.62, 0.028, 0.996, 0.06
     *_, widths = geometry(m, len(RUNS))
     img_h = fig_w * (right - img_left) / sum(widths) * len(arms)
@@ -165,15 +161,8 @@ def figure(res, ims, m, arms):
     return fig
 
 
-def main():
-    for part, arms in (("magnitude", ARMS), ("complex", ARMS[:2] + (NORDIC,) + ARMS[2:])):
-        res = json.loads((RESULTS / f"edden/{part}.json").read_text())
-        fig = figure(res, *images(work(part) / "frames", arms), arms)
-        OUT[part].parent.mkdir(parents=True, exist_ok=True)
-        with plt.rc_context({"savefig.pad_inches": 0.02}):
-            fig.savefig(OUT[part])
-        print(f"  wrote {OUT[part]}")
-
-
-if __name__ == "__main__":
-    main()
+def figure(part):
+    """The figure of one input: the magnitude, or the complex data with NORDIC."""
+    arms = ARMS if part == "magnitude" else ARMS[:2] + (NORDIC,) + ARMS[2:]
+    res = json.loads((RESULTS / f"edden/{part}.json").read_text())
+    return draw(res, *images(work(part) / "frames", arms), arms)
