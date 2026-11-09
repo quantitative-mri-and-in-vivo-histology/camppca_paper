@@ -21,7 +21,7 @@ import numpy as np
 from matplotlib.gridspec import GridSpec
 from scipy.ndimage import gaussian_filter
 
-from camppca_paper.exvivo_mouse import BVAL, NATIVE, scored
+from camppca_paper.exvivo_mouse import BVAL, NATIVE, scored, shown
 from camppca_paper.invivo import Key, draw_row, panel_letters
 from camppca_paper.paths import RESULTS
 from camppca_paper.style import CMP, CNO, COU
@@ -33,19 +33,6 @@ ARMS = (("noisy", "Noisy", CNO), ("standard", "Standard MPPCA", CMP), ("proposed
 
 def load(name):
     return np.asarray(nib.load(NATIVE / f"{name}.nii.gz").dataobj, np.float64)
-
-
-def shown(mask):
-    """The middle slice and a function that crops a 2-D map of it to the brain, blanks the
-    background and flips it along y."""
-    k = mask.shape[2] // 2
-    m = mask[:, :, k]
-    xi, yi = np.where(m)
-    sx, sy = slice(xi.min(), xi.max() + 1), slice(yi.min(), yi.max() + 1)
-
-    def cut(a):
-        return np.where(m[sx, sy], a[sx, sy], np.nan)[:, ::-1].T
-    return k, (sy.stop - sy.start) / (sx.stop - sx.start), cut
 
 
 def draw_images(fig, spec, z):

@@ -21,3 +21,16 @@ def scored(mask):
     """The tissue everything is scored on: the mask eroded in-plane by ERODE voxels. There are
     only nine slices, so there is no erosion through-slice."""
     return binary_erosion(mask, np.ones((3, 3, 1), bool), iterations=ERODE)
+
+
+def shown(mask):
+    """The middle slice and a function that crops a 2-D map of it to the brain, blanks the
+    background and flips it along y."""
+    k = mask.shape[2] // 2
+    m = mask[:, :, k]
+    xi, yi = np.where(m)
+    sx, sy = slice(xi.min(), xi.max() + 1), slice(yi.min(), yi.max() + 1)
+
+    def cut(a):
+        return np.where(m[sx, sy], a[sx, sy], np.nan)[:, ::-1].T
+    return k, (sy.stop - sy.start) / (sx.stop - sx.start), cut
