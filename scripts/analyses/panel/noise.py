@@ -1,9 +1,9 @@
 """Stage 3: what each scan's noise covariance model says (`camppca_paper.prediction`).
 
     correction  median over the mask of sigma_proposed / sigma_standard - 1, in %
-    prediction  N_PATCH patches drawn inside the mask at the scan's patch. The model fitted to
-                each (`freeze`) predicts Standard's noise level from N_DRAW draws. Error: RMS
-                over patches of the predicted over the read level, minus 1, in %
+    prediction  on the patches camppca's loop fits on, the model fitted to each (`fit`)
+                predicts Standard's noise level from N_DRAW draws. Error: RMS over patches of
+                the predicted over the read level, minus 1, in %
     components  the fitted level off the patch-mean mode over Standard's reading, RMS over the
                 patches, minus 1, in %: the full model, the level only (C = I) and the
                 correlation only (D flat)
@@ -25,14 +25,15 @@ from multiprocessing import Pool
 import camppca
 import nibabel as nib
 import numpy as np
+from threadpoolctl import threadpool_limits
 
 from camppca_paper.panel import SCANS, load, pe_axis
 from camppca_paper.paths import RESULTS
-from camppca_paper.prediction import freeze, perp2, predicted, root, sample_patches, sigma
+from camppca_paper.prediction import fit, grid_patches, perp2, predicted, root, sigma
 
-N_PATCH = 80
 N_DRAW = 200
 SEED = 0
+WORKERS = 16
 OUT = RESULTS / "panel/noise.json"
 
 
@@ -49,27 +50,32 @@ def rms(v):
 def per_scan(scan):
     m, patch = model(scan)
     data, *_ = load(scan)
-    C = m.patch_correlation(patch)
-    rng = np.random.default_rng(SEED)
-    idx = sample_patches(m.mask, patch, N_PATCH, rng)
-    X = data[idx[..., 0], idx[..., 1], idx[..., 2]].astype(np.float64)
+    idx = grid_patches(m.mask, patch)
+    X = data[idx[..., 0], idx[..., 1], idx[..., 2]]
     d = m.d[idx[..., 0], idx[..., 1], idx[..., 2]]
-    read = rms(sigma(X)[0])
-    Sigma, kept = freeze(X, C, d)
-    pred = [predicted(S, k, rng.standard_normal((N_DRAW, *X.shape[1:]))) for S, k in zip(Sigma, kept, strict=True)]
-    comp = {}
-    for arm, (Ca, da) in {"full": (C, d), "level": (np.eye(len(C)), d),
-                          "correlation": (C, np.ones_like(d))}.items():
-        level = [np.sqrt(perp2(S)) for S in freeze(X, Ca, da)[0]]
-        comp[arm] = 100 * (rms(level) / read - 1)
+    del data
+    C = m.patch_correlation(patch)
+    eye = np.eye(len(C))
+    rng = np.random.default_rng(SEED)
+    read, pred, comp = [], [], {"full": [], "level": [], "correlation": []}
+    for Xb, db in zip(X, d, strict=True):
+        read.append(sigma(Xb[None])[0][0])
+        S, kept = fit(Xb, C, db)
+        pred.append(predicted(S, kept, rng.standard_normal((N_DRAW, *Xb.shape))))
+        comp["full"].append(perp2(S))
+        comp["level"].append(perp2(fit(Xb, eye, db)[0]))
+        comp["correlation"].append(perp2(fit(Xb, C, np.ones_like(db))[0]))
+    read = rms(read)
+    comp = {arm: 100 * (rms(np.sqrt(v)) / read - 1) for arm, v in comp.items()}
     sig = {a: np.asarray(nib.load(scan.work / f"sigma_{a}.nii.gz").dataobj) for a in ("standard", "proposed")}
     ok = m.mask & (sig["standard"] > 0) & (sig["proposed"] > 0)
-    out = dict(config=scan.config, sub=scan.sub, n_volumes=int(data.shape[3]), patch=list(map(int, patch)),
-               pe_axis=pe_axis(scan), rho=m.rho.tolist(),
+    out = dict(config=scan.config, sub=scan.sub, n_volumes=int(X.shape[2]), patch=list(map(int, patch)),
+               n_patches=len(X), pe_axis=pe_axis(scan), rho=m.rho.tolist(),
                correction=float(100 * (np.median(sig["proposed"][ok] / sig["standard"][ok]) - 1)),
                prediction=100 * (rms(pred) / read - 1), components=comp)
-    print(f"  {scan.name}: correction {out['correction']:.1f} %, prediction {out['prediction']:.2f} %, "
-          f"level {comp['level']:.1f}, correlation {comp['correlation']:.1f}, full {comp['full']:.1f}", flush=True)
+    print(f"  {scan.name}: {len(X)} patches, correction {out['correction']:.1f} %, prediction "
+          f"{out['prediction']:.2f} %, level {comp['level']:.1f}, correlation {comp['correlation']:.1f}, "
+          f"full {comp['full']:.1f}", flush=True)
     return scan.name, out
 
 
@@ -107,8 +113,9 @@ def transfer(task):
 
 
 def main():
-    with Pool(8) as pool:
-        res = dict(pool.imap(per_scan, SCANS))
+    with Pool(WORKERS, initializer=threadpool_limits, initargs=(1,)) as pool:
+        res = dict(pool.imap_unordered(per_scan, SCANS))
+        res = {s.name: res[s.name] for s in SCANS}
         for name, t in pool.imap(transfer, [(s.name, res) for s in SCANS]):
             res[name]["transfer"] = t
     OUT.parent.mkdir(parents=True, exist_ok=True)

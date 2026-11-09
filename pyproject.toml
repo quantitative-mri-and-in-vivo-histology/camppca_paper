@@ -17,6 +17,7 @@ dependencies = [
     "matplotlib>=3.7.0",
     "dipy>=1.12",
     "awscli",
+    "threadpoolctl",
 ]
 
 [project.optional-dependencies]

@@ -2,26 +2,22 @@
 
 import numpy as np
 from camppca.denoiser.mp_threshold import mp_threshold
+from camppca.noise_model.loop import _sample_centers
 from camppca.patch import patch_offsets
 
 ALGO = "cordero-grande"
 
 
-def sample_patches(mask, patch, n, rng):
-    """Voxel indices of n patches drawn at random, each lying wholly inside the mask.
+def grid_patches(mask, patch):
+    """Voxel indices of the patches camppca's loop fits on: a grid that tiles the mask, each
+    patch wholly inside it.
 
     Returns:
         (n, P, 3) indices, rows in camppca's patch order.
     """
+    (x, y, z), _ = _sample_centers(mask, np.asarray(patch))
     off = patch_offsets(patch) - np.asarray(patch) // 2
-    shape = np.array(mask.shape)
-    centres = np.argwhere(mask)
-    out = []
-    while len(out) < n:
-        p = centres[rng.integers(len(centres))] + off
-        if (p >= 0).all() and (p < shape).all() and mask[tuple(p.T)].all():
-            out.append(p)
-    return np.array(out)
+    return np.stack([x, y, z], -1)[:, None] + off[None]
 
 
 def sigma(X):
@@ -52,25 +48,22 @@ def root(S, power=0.5):
     return (V * np.maximum(w, 1e-12) ** power) @ V.T
 
 
-def freeze(X, C, d):
-    """Fit the model's covariance to each patch: whiten by D C D, split by MP, keep the signal.
+def fit(X, C, d):
+    """Fit the model's covariance to a patch: whiten by D C D, split by MP, keep the signal.
 
     Args:
-        X: (B, P, N) patches in data units.
+        X: (P, N) patch in data units.
         C: (P, P) patch correlation.
-        d: (B, P) level at each patch's voxels, any scale.
+        d: (P,) level at the patch's voxels, any scale.
 
     Returns:
-        `(Sigma, kept)`: (B, P, P) fitted covariances v D C D, and (B, P, N) kept signal.
+        `(Sigma, kept)`: the (P, P) fitted covariance v D C D, and the (P, N) kept signal.
     """
-    Sigma, kept = [], []
-    for Xb, db in zip(np.asarray(X, np.float64), d, strict=True):
-        S = shape(C, db)
-        _, s, Vt = np.linalg.svd(root(S, -0.5) @ Xb, full_matrices=False)
-        rank, level = mp_threshold((s ** 2)[None], s.size, max(Xb.shape), ALGO)
-        Sigma.append(max(float(level[0]) ** 2, 1e-24) * S)
-        kept.append(Xb @ Vt[:rank[0]].T @ Vt[:rank[0]])
-    return np.array(Sigma), np.array(kept)
+    X = np.asarray(X, np.float64)
+    S = shape(C, d)
+    _, s, Vt = np.linalg.svd(root(S, -0.5) @ X, full_matrices=False)
+    rank, level = mp_threshold((s ** 2)[None], s.size, max(X.shape), ALGO)
+    return max(float(level[0]) ** 2, 1e-24) * S, X @ Vt[:rank[0]].T @ Vt[:rank[0]]
 
 
 def predicted(Sigma, kept, G):
