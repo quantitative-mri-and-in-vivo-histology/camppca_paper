@@ -4,19 +4,23 @@ import numpy as np
 from matplotlib.patches import ConnectionPatch, Rectangle
 from scipy.spatial import ConvexHull
 
-ROI_CENTRE = (0.586, 0.774)    # zoom box centre, fractions of the panel, bottom-left origin
-ROI_SIZE = 0.27                # zoom box side, fraction of the panel's shorter side
 ZC = "#00c853"                 # zoom box colour
 IZ = 0.552                     # magnifier size, fraction of the panel
 INSET_DROP = 0.05              # how far the magnifier hangs below the panel
 
 
-def box(shape):
-    """The zoom box on an image of `shape`: `(row, column, side)` of its lower-left corner."""
-    side = max(10, int(ROI_SIZE * min(shape)))
+def box(shape, centre, size):
+    """The zoom box on an image of `shape`: `(row, column, side)` of its lower-left corner.
+
+    Args:
+        shape: Image shape.
+        centre: Box centre as fractions of the image, bottom-left origin.
+        size: Box side as a fraction of the image's shorter side.
+    """
+    side = max(10, int(size * min(shape)))
     h = side // 2 + 1
-    cy = int(np.clip(round(ROI_CENTRE[0] * (shape[0] - 1)), h, shape[0] - h - 1))
-    cx = int(np.clip(round(ROI_CENTRE[1] * (shape[1] - 1)), h, shape[1] - h - 1))
+    cy = int(np.clip(round(centre[0] * (shape[0] - 1)), h, shape[0] - h - 1))
+    cx = int(np.clip(round(centre[1] * (shape[1] - 1)), h, shape[1] - h - 1))
     return cy - side // 2, cx - side // 2, side
 
 

@@ -1,12 +1,12 @@
 """Figure: the simulation's noise covariance across matrix aspect ratios.
 
-The gain field alone (F_D) and the k-space window alone (F_CORR), each on N_DRAW draws, every
-draw denoised on volume subsets of each size in N_LIST that keep the shell mix
-(`camppca_paper.simulation.volume_subsets`). The patch stays at PATCH, so the aspect ratio
-changes through N alone. Both arms are scored at N_PATCHES patch centres.
+The gain field alone (F_D) and the k-space window alone (F_C), as in the main figure, each on
+N_DRAW draws, every draw denoised on volume subsets of each size in N_LIST that keep the shell
+mix (`volume_subsets`). The patch stays at PATCH, so the aspect ratio changes through N alone.
+Both arms are scored over the brain.
 
-    a   sigma-hat over the true level at the centres, median over centres and draws
-    b   MSE against the truth at the centres, over every volume, as % of Noisy's
+    a   sigma-hat over the true level, median over brain voxels and draws
+    b   MSE against the truth over brain voxels and every volume, as % of Noisy's
 
 The scores are saved with their settings and rerun only when they change.
 
@@ -19,22 +19,13 @@ import numpy as np
 from matplotlib.colors import Normalize
 
 from camppca_paper.paths import RESULTS, WORK
-from camppca_paper.simulation import (
-    PATCH,
-    SEED,
-    SNR,
-    cached,
-    load_phantom,
-    sample_centres,
-    simulate_acquisition,
-    volume_subsets,
-)
+from camppca_paper.simulation import cached, load_phantom, simulate_acquisition
 
-F_D = (0.0, 0.25, 0.5, 1.0, 1.5, 2.0, 3.0)        # gain sweep, window off
-F_CORR = (0.0, 0.2, 0.4, 0.6, 0.8, 1.0)           # window sweep, gain off
+PATCH = (5, 5, 5)
+F_D = (1.0, 1.75, 2.5, 3.25, 4.0)                 # gain sweep, window off
+F_C = (0.0, 0.2, 0.4, 0.6, 0.8)                   # window sweep, gain off
 N_LIST = (30, 45, 60, 75, 90, 105)
-N_PATCHES = 1500
-N_DRAW = 3
+N_DRAW = 20
 CACHE = WORK / "simulation_matrix_geometry.npz"
 OUT = RESULTS / "supp/simulation_matrix_geometry.pdf"
 MIXES = (("level", "Spatially varying level only", "sd_d", r"Spread of the noise level (std($d$))"),
@@ -43,34 +34,49 @@ ARMS = (("standard", "Standard MPPCA"), ("proposed", "Proposed"))
 NORM = Normalize(0.65, 1.35)
 
 
+def volume_subsets(bval, counts):
+    """Volume subsets of several sizes, each holding the shell mix of the whole acquisition.
+
+    Args:
+        bval: (nv,) b-values.
+        counts: Sizes to draw.
+
+    Returns:
+        `{n: index array}`, each sorted.
+    """
+    order = np.argsort(bval, kind="stable")
+    return {int(n): np.sort(order[np.linspace(0, len(order) - 1, n).round().astype(int)]) for n in counts}
+
+
 def cells():
-    return [("level", 0.0, v) for v in F_D] + [("corr", f, 0.0) for f in F_CORR]
+    return [("level", 0.0, v) for v in F_D] + [("corr", v, 1.0) for v in F_C]
 
 
 def run(signal, mask, bval):
     """Per cell and N: the median sigma-hat over sigma and the MSE as % of Noisy's, per arm."""
-    where = sample_centres(mask, N_PATCHES)
     subsets = volume_subsets(bval, N_LIST)
     out = {}
-    for i, (mix, f, f_d) in enumerate(cells()):
+    for i, (mix, f_c, f_d) in enumerate(cells()):
+        y = None
         for n, vols in subsets.items():
             ratio = {arm: [] for arm, _ in ARMS}
             err = {arm: 0.0 for arm, _ in ARMS} | {"noisy": 0.0}
             for r in range(N_DRAW):
-                a = simulate_acquisition(signal, mask, bval, SNR, f, f_d, SEED + 1000 * r)
-                data, truth = a["data"][..., vols], a["truth"][..., vols]
-                got = {"standard": camppca.denoise_mppca(data, mask=where, patch=PATCH),
+                a = simulate_acquisition(signal, mask, bval, f_c, f_d, seed=r, y=y)
+                y = a["y"]
+                data, truth = a["y_noisy"][..., vols], a["y"][..., vols]
+                got = {"standard": camppca.denoise_mppca(data, mask=mask, patch=PATCH),
                        "proposed": camppca.denoise_camppca(data, bvals=bval[vols], mask=mask, patch=PATCH,
                                                            mask_only=True)}
-                err["noisy"] += float(np.mean((data[where] - truth[where]) ** 2))
+                err["noisy"] += float(np.mean((data[mask] - truth[mask]) ** 2))
                 for arm, res in got.items():
-                    ratio[arm].append(res.sigma[where] / a["sigma"][where])
-                    err[arm] += float(np.mean((res.denoised[where] - truth[where]) ** 2))
+                    ratio[arm].append(res.sigma[mask] / a["sigma"][mask])
+                    err[arm] += float(np.mean((res.denoised[mask] - truth[mask]) ** 2))
             for arm, _ in ARMS:
                 out[f"{i}_{n}_{arm}_ratio"] = float(np.median(np.concatenate(ratio[arm])))
                 out[f"{i}_{n}_{arm}_mse"] = 100 * err[arm] / err["noisy"]
         out[f"{i}_sd_d"], out[f"{i}_rho1"] = a["sd_d"], a["rho1"]
-        print(f"  {mix:5s} f {f:.2f} f_d {f_d:.2f}", flush=True)
+        print(f"  {mix:5s} f_c {f_c:.2f} f_d {f_d:.2f}", flush=True)
     return out
 
 
@@ -110,8 +116,8 @@ def heatmaps(fig, spec, res, key, title, cmap, norm, fmt):
 
 def main():
     signal, mask, bval = load_phantom()
-    res = cached(CACHE, dict(snr=SNR, seed=SEED, patch=PATCH, f_d=F_D, f_corr=F_CORR, n_list=N_LIST,
-                             n_patches=N_PATCHES, n_draw=N_DRAW), lambda: run(signal, mask, bval))
+    res = cached(CACHE, dict(patch=PATCH, f_d=F_D, f_c=F_C, n_list=N_LIST,
+                             scope="brain", n_draw=N_DRAW), lambda: run(signal, mask, bval))
     fig = plt.figure(figsize=(7.0, 10.4))
     outer = fig.add_gridspec(2, 1, left=0.17, right=0.87, top=0.94, bottom=0.05, hspace=0.2)
     heatmaps(fig, outer[0], res, "ratio", r"$\hat\sigma$ / $\sigma$", "BrBG", NORM, "{:.2f}")

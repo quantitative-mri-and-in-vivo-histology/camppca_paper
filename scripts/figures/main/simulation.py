@@ -1,10 +1,10 @@
 """Figure: the simulation on the subject phantom.
 
-a   one acquisition at window blend 0.5 and gain amplitude 1.0: image, residual and noise level
+a   one acquisition at window blend 0.5 and maximum gain 2: image, residual and noise level
     for ground truth, noisy, Standard MPPCA and Proposed.
-b-g two sweeps, the gain field alone and the window alone, N_DRAW draws per cell, scored at
-    N_PATCHES patch centres: the true noise level over the thermal level (b, c), sigma-hat over
-    the true level (d, e), and the MSE split into variance and bias squared (f, g).
+b-g two sweeps, the gain field alone and the window alone, N_DRAW draws per cell, scored over
+    the brain: the true noise level over the thermal level (b, c), sigma-hat over the true level
+    (d, e), and the MSE over every volume split into variance and bias squared (f, g).
 
 Each simulation is saved with its settings and rerun only when they change.
 
@@ -15,33 +15,25 @@ Each simulation is saved with its settings and rerun only when they change.
 import camppca
 import matplotlib.pyplot as plt
 import numpy as np
-from camppca.denoiser.camppca import denoise_whitened
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize, to_rgb
 from matplotlib.legend_handler import HandlerBase
 from matplotlib.patches import Rectangle
 from matplotlib.ticker import MaxNLocator
-from scipy.ndimage import uniform_filter
 
 from camppca_paper.paths import DATA_ROOT, WORK
-from camppca_paper.simulation import (
-    PATCH,
-    QUAL,
-    SEED,
-    SHOW_B,
-    SNR,
-    cached,
-    load_phantom,
-    sample_centres,
-    simulate_acquisition,
-)
+from camppca_paper.simulation import cached, load_phantom, simulate_acquisition
 from camppca_paper.style import CMP, COU, RCM
 from camppca_paper.zoom import box, zoomed
 
-N_PATCHES = 1500
-N_DRAW = 10
-F_D = (0.0, 0.75, 1.5, 2.25, 3.0)              # gain sweep, window off
-F_CORR = (0.2, 0.4, 0.6, 0.8)                  # window sweep, gain off
+PATCH = (5, 5, 5)
+QUAL = (0.5, 2.0)                              # (f_c, f_d) of panel a
+SHOW_B = 2000                                  # the shown volume's shell
+ROI_CENTRE = (0.586, 0.774)    # zoom box centre, fractions of the panel, bottom-left origin
+ROI_SIZE = 0.27                # zoom box side, fraction of the panel's shorter side
+N_DRAW = 20
+F_D = (1.0, 1.75, 2.5, 3.25, 4.0)              # gain sweep, window off
+F_C = (0.2, 0.4, 0.6, 0.8)                     # window sweep, gain off
 
 QUANT = WORK / "simulations_quant.npz"
 QUAL_CACHE = WORK / "simulations_qual.npz"
@@ -55,60 +47,55 @@ MIXES = (("level", "Spatially varying level only", "sd_d", r"Spread of the noise
 # ---------------------------------------------------------------------------- simulations
 
 def cells():
-    """(mix, f, f_d) of every sweep cell. The white cell (first) also opens the window sweep."""
-    return [("level", 0.0, v) for v in F_D] + [("corr", f, 0.0) for f in F_CORR]
-
-
-def denoise_camppca_at(data, mask, bval, where):
-    """camppca with the noise model estimated on `mask`, denoised only at the voxels `where`.
-
-    Returns `(denoised, sigma_hat)`, `sigma_hat` in data units.
-    """
-    model = camppca.estimate_noise_model(data, bvals=bval, mask=mask, patch=PATCH)
-    d = model.effective_d()
-    den, sig, _ = denoise_whitened(data, where, model.patch_correlation(PATCH), patch=PATCH,
-                                   d_field=d)
-    return den, sig * d
+    """(mix, f_c, f_d) of every sweep cell. The white cell (first) also opens the window sweep."""
+    return [("level", 0.0, v) for v in F_D] + [("corr", v, 1.0) for v in F_C]
 
 
 def run_quant(signal, mask, bval):
-    """Every cell, N_DRAW draws, both arms at the patch centres."""
-    where = sample_centres(mask, N_PATCHES)
+    """Every cell, N_DRAW draws, both arms over the brain.
+
+    Per cell: each arm's sigma-hat in the brain per draw, and its variance and bias squared over
+    draws, pooled over brain voxels and volumes. Noisy's too.
+    """
     out = {}
-    for i, (mix, f, f_d) in enumerate(cells()):
-        rows = {k: [] for k in ("noisy", "standard", "proposed", "sigma_standard", "sigma_proposed")}
+    for i, (mix, f_c, f_d) in enumerate(cells()):
+        s1 = {k: 0.0 for k in ("noisy", "standard", "proposed")}
+        s2 = dict(s1)
+        sig = {"standard": [], "proposed": []}
+        y = None
         for r in range(N_DRAW):
-            a = simulate_acquisition(signal, mask, bval, SNR, f, f_d, SEED + 1000 * r)
-            std = camppca.denoise_mppca(a["data"], mask=where, patch=PATCH)
-            den_p, sig_p = denoise_camppca_at(a["data"], mask, bval, where)
-            rows["noisy"].append(a["data"][where])
-            rows["standard"].append(std.denoised[where])
-            rows["proposed"].append(den_p[where])
-            rows["sigma_standard"].append(std.sigma[where])
-            rows["sigma_proposed"].append(sig_p[where])
-        out |= {f"{i}_{k}": np.asarray(v, np.float32) for k, v in rows.items()}
-        out |= {f"{i}_truth": a["truth"][where], f"{i}_sigma": a["sigma"][where],
-                f"{i}_thermal": a["thermal"], f"{i}_rho1": a["rho1"], f"{i}_sd_d": a["sd_d"]}
-        print(f"  {mix:5s} f {f:.2f} f_d {f_d:.2f}  {N_DRAW} draws", flush=True)
+            a = simulate_acquisition(signal, mask, bval, f_c, f_d, seed=r, y=y)
+            y = a["y"]
+            std = camppca.denoise_mppca(a["y_noisy"], mask=mask, patch=PATCH)
+            prop = camppca.denoise_camppca(a["y_noisy"], bvals=bval, mask=mask, patch=PATCH, mask_only=True)
+            for k, x in (("noisy", a["y_noisy"]), ("standard", std.denoised), ("proposed", prop.denoised)):
+                x = x[mask].astype(float)
+                s1[k] = s1[k] + x
+                s2[k] = s2[k] + x ** 2
+            sig["standard"].append(std.sigma[mask])
+            sig["proposed"].append(prop.sigma[mask])
+        truth = a["y"][mask].astype(float)
+        for k in s1:
+            mean = s1[k] / N_DRAW
+            var = (s2[k] - N_DRAW * mean ** 2) / (N_DRAW - 1)
+            out[f"{i}_{k}_var"] = float(var.mean())
+            out[f"{i}_{k}_b2"] = float(((mean - truth) ** 2 - var / N_DRAW).mean())
+        out |= {f"{i}_sigma_{k}": np.asarray(v, np.float32) for k, v in sig.items()}
+        out |= {f"{i}_sigma": a["sigma"][mask], f"{i}_thermal": a["sigma_thermal"], f"{i}_rho1": a["rho1"],
+                f"{i}_sd_d": a["sd_d"]}
+        print(f"  {mix:5s} f_c {f_c:.2f} f_d {f_d:.2f}  {N_DRAW} draws", flush=True)
     return out
-
-
-def patch_mean(x, mask):
-    """Each mask voxel's value averaged over the mask voxels of its patch."""
-    num = uniform_filter(np.where(mask, x, 0).astype(np.float32), PATCH, mode="constant")
-    den = uniform_filter(mask.astype(np.float32), PATCH, mode="constant")
-    return np.where(mask, num / np.maximum(den, 1e-12), 0).astype(np.float32)
 
 
 def run_qual(signal, mask, bval):
     """One acquisition at QUAL, both arms over the whole brain."""
-    a = simulate_acquisition(signal, mask, bval, SNR, *QUAL, SEED)
-    std = camppca.denoise_mppca(a["data"], mask=mask, patch=PATCH)
-    prop = camppca.denoise_camppca(a["data"], bvals=bval, mask=mask, patch=PATCH)
-    return dict(truth=a["truth"], noisy=a["data"], standard=std.denoised,
+    a = simulate_acquisition(signal, mask, bval, *QUAL)
+    std = camppca.denoise_mppca(a["y_noisy"], mask=mask, patch=PATCH)
+    prop = camppca.denoise_camppca(a["y_noisy"], bvals=bval, mask=mask, patch=PATCH)
+    return dict(truth=a["y"], noisy=a["y_noisy"], standard=std.denoised,
                 proposed=prop.denoised, sigma=(a["sigma"] * mask).astype(np.float32),
-                sigma_standard=patch_mean(std.sigma, mask),
-                sigma_proposed=patch_mean(prop.sigma, mask), mask=mask)
+                sigma_standard=(std.sigma * mask).astype(np.float32),
+                sigma_proposed=(prop.sigma * mask).astype(np.float32), mask=mask)
 
 
 # ---------------------------------------------------------------------------- statistics
@@ -117,24 +104,16 @@ def quartiles(x):
     return np.percentile(x, (25, 50, 75))
 
 
-def bias_variance(X, truth):
-    """Variance and bias squared over draws, pooled over centres and volumes."""
-    X = X.astype(float)
-    var = X.var(0, ddof=1)
-    b2 = (X.mean(0) - truth) ** 2 - var / len(X)
-    return float(var.mean()), float(b2.mean())
-
-
 def sweep_stats(q):
     """Per mix, per cell: x values, true level over thermal, sigma-hat over true, MSE split."""
     res = {"level": [], "corr": []}
     for i, (mix, _, _) in enumerate(cells()):
-        sig, truth = q[f"{i}_sigma"].astype(float), q[f"{i}_truth"].astype(float)
+        sig = q[f"{i}_sigma"].astype(float)
         row = dict(sd_d=float(q[f"{i}_sd_d"]), rho1=float(q[f"{i}_rho1"]),
                    level=quartiles(sig / float(q[f"{i}_thermal"])))
-        var_n, b2_n = bias_variance(q[f"{i}_noisy"], truth)
+        var_n, b2_n = float(q[f"{i}_noisy_var"]), float(q[f"{i}_noisy_b2"])
         for arm, _, _ in ARMS:
-            var, b2 = bias_variance(q[f"{i}_{arm}"], truth)
+            var, b2 = float(q[f"{i}_{arm}_var"]), float(q[f"{i}_{arm}_b2"])
             row[arm] = dict(ratio=quartiles(q[f"{i}_sigma_{arm}"] / sig),
                             var=100 * var / (var_n + b2_n), mse=100 * (var + b2) / (var_n + b2_n))
         res[mix].append(row)
@@ -163,7 +142,7 @@ def panel_a(s, bval):
 
     shown = np.where(np.abs(bval - SHOW_B) <= 100)[0]
     vol = int(shown[len(shown) // 2])
-    r0, c0, RZ = box(cut(s["truth"][:, :, zc, vol]).shape)
+    r0, c0, RZ = box(cut(s["truth"][:, :, zc, vol]).shape, ROI_CENTRE, ROI_SIZE)
 
     ev = 2.0 * float((s["noisy"] - s["truth"])[M4].std())
     sv = np.concatenate([s[k][M4] for k in ("sigma", "sigma_standard", "sigma_proposed")])
@@ -358,11 +337,11 @@ def figure(qual, res, bval):
 
 def main():
     signal, mask, bval = load_phantom()
-    common = dict(snr=SNR, seed=SEED, patch=PATCH)
+    common = dict(patch=PATCH)
     qual = cached(QUAL_CACHE, dict(common, qual=QUAL),
                   lambda: run_qual(signal, mask, bval))
-    quant = cached(QUANT, dict(common, n_patches=N_PATCHES, n_draw=N_DRAW, f_d=F_D,
-                               f_corr=F_CORR), lambda: run_quant(signal, mask, bval))
+    quant = cached(QUANT, dict(common, scope="brain", n_draw=N_DRAW, f_d=F_D,
+                               f_c=F_C), lambda: run_quant(signal, mask, bval))
     fig = figure(qual, sweep_stats(quant), bval)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUT)
