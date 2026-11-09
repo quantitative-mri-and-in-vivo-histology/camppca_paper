@@ -11,7 +11,6 @@ Each simulation is saved with its settings and rerun only when they change.
     python scripts/figures/main/simulations.py
 """
 
-import json
 
 import camppca
 import matplotlib.pyplot as plt
@@ -20,28 +19,29 @@ from camppca.denoiser.camppca import denoise_whitened
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize, to_rgb
 from matplotlib.legend_handler import HandlerBase
-from matplotlib.patches import ConnectionPatch, Rectangle
+from matplotlib.patches import Rectangle
 from matplotlib.ticker import MaxNLocator
 from scipy.ndimage import uniform_filter
-from scipy.spatial import ConvexHull
 
 from camppca_paper.paths import DATA_ROOT, WORK
 from camppca_paper.simulation import (
     PATCH,
+    QUAL,
+    SEED,
+    SHOW_B,
+    SNR,
+    cached,
     load_phantom,
     sample_centres,
     simulate_acquisition,
 )
 from camppca_paper.style import CMP, COU, RCM
+from camppca_paper.zoom import box, zoomed
 
-SNR = 20
-SEED = 5
 N_PATCHES = 1500
 N_DRAW = 10
 F_D = (0.0, 0.75, 1.5, 2.25, 3.0)              # gain sweep, window off
 F_CORR = (0.2, 0.4, 0.6, 0.8)                  # window sweep, gain off
-QUAL = (0.5, 1.0)                              # (f, f_d) of panel a
-SHOW_B = 2000                                  # panel a shows a volume of this shell
 
 QUANT = WORK / "simulations_quant.npz"
 QUAL_CACHE = WORK / "simulations_qual.npz"
@@ -53,19 +53,6 @@ MIXES = (("level", "Spatially varying level only", "sd_d", r"Spread of the noise
 
 
 # ---------------------------------------------------------------------------- simulations
-
-def cached(path, settings, run):
-    """`run()` saved to `path` with `settings`, or loaded from there if the settings match."""
-    key = json.dumps(settings, sort_keys=True)
-    if path.exists():
-        with np.load(path) as z:
-            if str(z["settings"]) == key:
-                return {k: z[k] for k in z.files}
-    out = run()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    np.savez(path, settings=key, **out)
-    return out
-
 
 def cells():
     """(mix, f, f_d) of every sweep cell. The white cell (first) also opens the window sweep."""
@@ -158,28 +145,8 @@ def sweep_stats(q):
 
 # ---------------------------------------------------------------------------- panel a
 
-ROI_CENTRE = (0.586, 0.774)    # zoom box centre, fractions of the panel, bottom-left origin
-ROI_SIZE = 0.27                # zoom box side, fraction of the panel's shorter side
-ZC = "#00c853"                 # zoom box colour
-IZ = 0.552                     # magnifier size, fraction of the panel
-INSET_DROP = 0.05              # how far the magnifier hangs below the panel
 COLS = ("Ground truth", "Noisy", "Standard MPPCA", "Proposed")
 ROWS = ("Image", "Residual", "Noise level")
-
-
-def connect(a, box, ia, inset):
-    """Dashed lines from the zoom box to the magnifier, along the outside of both squares."""
-    x0, y0, side = box
-    to_frac = a.transData + a.transAxes.inverted()
-    unit = ((0, 0), (1, 0), (1, 1), (0, 1))
-    small = to_frac.transform([(x0 + u * side, y0 + v * side) for u, v in unit])
-    big = np.array([(inset[0] + u * inset[2], inset[1] + v * inset[2]) for u, v in unit])
-    on = set(ConvexHull(np.vstack([small, big])).vertices)
-    for k, (u, v) in enumerate(unit):
-        if k in on and k + 4 in on:
-            a.add_artist(ConnectionPatch(small[k], (u, v), coordsA=a.transAxes,
-                                         coordsB=ia.transAxes, color=ZC, lw=1.2,
-                                         ls=(0, (3, 2)), zorder=4))
 
 
 def panel_a(s, bval):
@@ -196,14 +163,7 @@ def panel_a(s, bval):
 
     shown = np.where(np.abs(bval - SHOW_B) <= 100)[0]
     vol = int(shown[len(shown) // 2])
-    T2 = cut(s["truth"][:, :, zc, vol])
-    RZ = max(10, int(ROI_SIZE * min(T2.shape)))
-    h = RZ // 2 + 1
-    cy = int(np.clip(round(ROI_CENTRE[0] * (T2.shape[0] - 1)), h, T2.shape[0] - h - 1))
-    cx = int(np.clip(round(ROI_CENTRE[1] * (T2.shape[1] - 1)), h, T2.shape[1] - h - 1))
-    r0, c0 = cy - RZ // 2, cx - RZ // 2
-    roi = (slice(r0, r0 + RZ), slice(c0, c0 + RZ))
-    ix, iy = 1 - IZ, -INSET_DROP
+    r0, c0, RZ = box(cut(s["truth"][:, :, zc, vol]).shape)
 
     ev = 2.0 * float((s["noisy"] - s["truth"])[M4].std())
     sv = np.concatenate([s[k][M4] for k in ("sigma", "sigma_standard", "sigma_proposed")])
@@ -253,18 +213,7 @@ def panel_a(s, bval):
                 cb.ax.tick_params(labelsize=9, length=2, pad=1.5)
                 cb.outline.set_linewidth(0.6)
                 continue
-            B = cut(A)
-            kw = (gk, rk, sk)[i]
-            a.imshow(B, origin="lower", **kw)
-            a.add_patch(Rectangle((c0 - 0.5, r0 - 0.5), RZ, RZ, fill=False, ec=ZC, lw=1.9))
-            ia = a.inset_axes([ix, iy, IZ, IZ])
-            ia.imshow(B[roi], origin="lower", **kw)
-            ia.set_xticks([])
-            ia.set_yticks([])
-            for sp in ia.spines.values():
-                sp.set_color(ZC)
-                sp.set_linewidth(1.9)
-            connect(a, (c0 - 0.5, r0 - 0.5, RZ), ia, (ix, iy, IZ))
+            zoomed(a, cut(A), (gk, rk, sk)[i], r0, c0, RZ)
     for a, name in zip(rowax, ROWS, strict=True):
         q = a.get_position()
         fig.text(L - 0.012, 0.5 * (q.y0 + q.y1), name, rotation=90, va="center", ha="center",

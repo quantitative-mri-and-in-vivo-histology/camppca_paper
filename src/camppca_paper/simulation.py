@@ -1,5 +1,7 @@
 """Simulated acquisitions on the subject phantom."""
 
+import json
+
 import camppca
 import nibabel as nib
 import numpy as np
@@ -12,6 +14,10 @@ B0_MAX = 100
 N_SLICES = 14
 FIELD_SEED = 11
 FIELD_SMOOTH = 2.0
+SNR = 20
+SEED = 5
+QUAL = (0.5, 1.0)          # (f, f_d) of the qualitative examples
+SHOW_B = 2000              # they show a volume of this shell
 
 
 def load_phantom():
@@ -139,3 +145,15 @@ def sample_centres(mask, n, seed=0):
     out.flat[pick] = True
     return out
 
+
+def cached(path, settings, run):
+    """`run()` saved to `path` with `settings`, or loaded from there if the settings match."""
+    key = json.dumps(settings, sort_keys=True)
+    if path.exists():
+        with np.load(path) as z:
+            if str(z["settings"]) == key:
+                return {k: z[k] for k in z.files}
+    out = run()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    np.savez(path, settings=key, **out)
+    return out
