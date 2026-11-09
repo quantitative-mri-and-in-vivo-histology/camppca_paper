@@ -157,3 +157,17 @@ def cached(path, settings, run):
     path.parent.mkdir(parents=True, exist_ok=True)
     np.savez(path, settings=key, **out)
     return out
+
+
+def volume_subsets(bval, counts):
+    """Volume subsets of several sizes, each holding the shell mix of the whole acquisition.
+
+    Args:
+        bval: (nv,) b-values.
+        counts: Sizes to draw.
+
+    Returns:
+        `{n: index array}`, each sorted.
+    """
+    order = np.argsort(bval, kind="stable")
+    return {int(n): np.sort(order[np.linspace(0, len(order) - 1, n).round().astype(int)]) for n in counts}
