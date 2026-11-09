@@ -271,6 +271,57 @@ def pe_axis(base: Path) -> int:
     return int(np.argmax(np.abs(acq[:3])))
 
 
+def displacement(base: Path, stride: int = 2) -> dict:
+    """How far eddy's correction moves a session's brain, by cause, in mm.
+
+    Over the voxels of mask_bet, every `stride`-th along each axis:
+
+        motion, eddy, total   per voxel the RMS over volumes of its displacement's deviation
+                              from its own mean, then the mean over voxels: R x - x, the
+                              eddy-current shift along the phase encode, and both together
+        susc                  the mean absolute susceptibility shift along the phase encode,
+                              the same in every volume
+
+    Args:
+        base: eddy's folder, as for `eddy_coords_from_params`.
+        stride: Voxel subsampling along each axis.
+    """
+    grid = nib.load(base / "mask_bet.nii.gz")
+    vox = np.array(grid.header.get_zooms()[:3], float)
+    shape = grid.shape[:3]
+    mask = np.asarray(grid.dataobj) > 0
+    sub = np.zeros_like(mask)
+    sub[::stride, ::stride, ::stride] = True
+    p = np.array(np.nonzero(mask & sub), float)
+    axis = pe_axis(base)
+    susc = topup_at(nib.load(base / "topup_fieldcoef.nii.gz"), p, axis)[0]
+    params = np.atleast_2d(np.loadtxt(base / "eddy.eddy_parameters"))
+    rows = np.atleast_1d(np.loadtxt(base / "index.txt")).astype(int) - 1
+    acqp = np.atleast_2d(np.loadtxt(base / "acqp.txt"))
+    centre = (np.asarray(shape, float) - 1) * vox / 2
+    x = p * vox[:, None]
+    keys = ("motion", "eddy", "total")
+    s1 = {k: np.zeros_like(x) for k in keys}
+    s2 = {k: np.zeros(x.shape[1]) for k in keys}
+    shift = []
+    for j, mp in enumerate(params):
+        acq = acqp[rows[j]]
+        k = acq[axis] * acq[3] * vox[axis]                     # Hz to mm along the phase encode
+        R = movement_matrix(mp[:6], shape, vox)
+        moved = R[:3, :3] @ x + R[:3, 3:4]
+        eddy = np.zeros_like(x)
+        eddy[axis] = k * _ec_field(mp[6:16], moved - centre[:, None])[0]
+        parts = {"motion": moved - x, "eddy": eddy}
+        parts["total"] = parts["motion"] + eddy
+        for key, u in parts.items():
+            s1[key] += u
+            s2[key] += (u ** 2).sum(0)
+        shift.append(np.abs(k * susc).mean())
+    n = len(params)
+    out = {key: float(np.sqrt(np.maximum(s2[key] / n - ((s1[key] / n) ** 2).sum(0), 0)).mean()) for key in keys}
+    return out | {"susc": float(np.mean(shift))}
+
+
 def pull_series(task: tuple) -> str:
     """One native series into a template in one pull: every volume through eddy's estimated correction.
 
