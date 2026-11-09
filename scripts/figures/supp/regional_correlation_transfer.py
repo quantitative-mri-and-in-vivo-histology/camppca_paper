@@ -3,7 +3,7 @@
 One violin per source of the whitening pattern: another region of the same cut, the whole
 brain, or none (Standard MPPCA). Every cut axis, region and scan pooled, the median as a bar.
 
-    python scripts/figures/supplementary/regional_kernel_transfer.py
+    python scripts/figures/supp/regional_correlation_transfer.py
 """
 
 import json
@@ -14,7 +14,7 @@ import numpy as np
 from camppca_paper.paths import RESULTS
 from camppca_paper.style import CMP, COU
 
-OUT = RESULTS / "supplementary/regional_kernel_transfer.pdf"
+OUT = RESULTS / "supp/regional_correlation_transfer.pdf"
 SOURCES = (("region", "Other\nregion", COU), ("whole_brain", "Whole\nbrain", COU),
            ("none", "None\n(Standard MPPCA)", CMP))
 

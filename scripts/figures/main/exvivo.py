@@ -10,7 +10,7 @@ d, e    DTI and DKI RMS difference from the reference's maps in white matter
 
 Reads data/analyses/exvivo_mouse/native and data/results/exvivo_mouse/metrics.json.
 
-    python scripts/figures/main/exvivo_gt_validation.py
+    python scripts/figures/main/exvivo.py
 """
 
 import json
@@ -26,7 +26,7 @@ from camppca_paper.invivo import Key, draw_row, panel_letters
 from camppca_paper.paths import RESULTS
 from camppca_paper.style import CMP, CNO, COU
 
-OUT = RESULTS / "main/exvivo_gt_validation.pdf"
+OUT = RESULTS / "main/exvivo.pdf"
 SHELL = 2000
 ARMS = (("noisy", "Noisy", CNO), ("standard", "Standard MPPCA", CMP), ("proposed", "Proposed", COU))
 

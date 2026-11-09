@@ -8,7 +8,7 @@ b-e   each displacement measure over the correction, both centered on the scanne
       eddy currents (d), and the mean susceptibility shift (e). Above each, the repeated-measures
       correlation r and its p, on N - k - 1 degrees of freedom (N sessions, k scanners)
 
-    python scripts/figures/supplementary/invivo_within_scanner_correction.py
+    python scripts/figures/supp/invivo_repeat_harmony_correction.py
 """
 
 from multiprocessing import Pool
@@ -22,7 +22,7 @@ from camppca_paper.on_harmony import PARTICIPANTS, SITES, sessions
 from camppca_paper.paths import RESULTS
 from camppca_paper.registration import displacement
 
-OUT = RESULTS / "supplementary/invivo_within_scanner_correction.pdf"
+OUT = RESULTS / "supp/invivo_repeat_harmony_correction.pdf"
 COLOURS = dict(zip(("OXF1PRI", "OXF2PRI", "OXF3TRI", "NOT1ACH", "NOT2ING", "OXF4GEP", "NOT4GEP"),
                    ("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#CC79A7", "#E41A1C", "#000000"), strict=True))
 MARKERS = dict(zip(COLOURS, "osD^vPX", strict=True))

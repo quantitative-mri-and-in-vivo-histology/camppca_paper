@@ -8,7 +8,7 @@ c   the correlation table along phase encode, readout and slice, lags 1 to REACH
 d   sigma-hat over sigma on pure noise whitened with the other subject's correlation, the mean
     over the other configurations, or none
 
-    python scripts/figures/main/generalization_invivo.py
+    python scripts/figures/main/invivo_panel.py
 """
 
 import json
@@ -22,7 +22,7 @@ from camppca_paper.panel import vendor
 from camppca_paper.paths import RESULTS
 from camppca_paper.style import VENDOR_COLOURS
 
-OUT = RESULTS / "main/generalization_invivo.pdf"
+OUT = RESULTS / "main/invivo_panel.pdf"
 REACH = 4
 TITLE = dict(fontsize=10, fontweight="bold", pad=10)
 

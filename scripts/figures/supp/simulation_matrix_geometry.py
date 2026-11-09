@@ -10,7 +10,7 @@ changes through N alone. Both arms are scored at N_PATCHES patch centres.
 
 The scores are saved with their settings and rerun only when they change.
 
-    python scripts/figures/supplementary/calibration_sim.py
+    python scripts/figures/supp/simulation_matrix_geometry.py
 """
 
 import camppca
@@ -35,8 +35,8 @@ F_CORR = (0.0, 0.2, 0.4, 0.6, 0.8, 1.0)           # window sweep, gain off
 N_LIST = (30, 45, 60, 75, 90, 105)
 N_PATCHES = 1500
 N_DRAW = 3
-CACHE = WORK / "simulations_calibration.npz"
-OUT = RESULTS / "supplementary/calibration_sim.pdf"
+CACHE = WORK / "simulation_matrix_geometry.npz"
+OUT = RESULTS / "supp/simulation_matrix_geometry.pdf"
 MIXES = (("level", "Spatially varying level only", "sd_d", r"Spread of the noise level (std($d$))"),
          ("corr", "Correlation only", "rho1", r"Nearest-neighbor correlation ($\rho(1)$)"))
 ARMS = (("standard", "Standard MPPCA"), ("proposed", "Proposed"))

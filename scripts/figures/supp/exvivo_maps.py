@@ -5,7 +5,7 @@ columns, each row on one grey scale from the 1st to the 99th percentile of its p
 
 Reads data/analyses/exvivo_mouse/maps/.
 
-    python scripts/figures/supplementary/exvivo_gt_maps.py
+    python scripts/figures/supp/exvivo_maps.py
 """
 
 import matplotlib.pyplot as plt
@@ -17,7 +17,7 @@ from camppca_paper.exvivo_mouse import MAPS, NATIVE, shown
 from camppca_paper.paths import RESULTS
 from camppca_paper.style import MAP_SCALE, MAP_UNITS
 
-OUT = RESULTS / "supplementary/exvivo_gt_maps.pdf"
+OUT = RESULTS / "supp/exvivo_maps.pdf"
 NAMES = ("FA", "MD", "MK", "AK", "RK")
 ARMS = (("reference", "Reference (20-average)"), ("noisy", "Noisy"), ("standard", "Standard MPPCA"),
         ("proposed", "Proposed"))

@@ -8,7 +8,7 @@ b-g two sweeps, the gain field alone and the window alone, N_DRAW draws per cell
 
 Each simulation is saved with its settings and rerun only when they change.
 
-    python scripts/figures/main/simulations.py
+    python scripts/figures/main/simulation.py
 """
 
 
@@ -45,7 +45,7 @@ F_CORR = (0.2, 0.4, 0.6, 0.8)                  # window sweep, gain off
 
 QUANT = WORK / "simulations_quant.npz"
 QUAL_CACHE = WORK / "simulations_qual.npz"
-OUT = DATA_ROOT / "results/main/simulations.pdf"
+OUT = DATA_ROOT / "results/main/simulation.pdf"
 
 ARMS = (("standard", CMP, "Standard MPPCA"), ("proposed", COU, "Proposed"))
 MIXES = (("level", "Spatially varying level only", "sd_d", r"Spread of the noise level (std($d$))"),

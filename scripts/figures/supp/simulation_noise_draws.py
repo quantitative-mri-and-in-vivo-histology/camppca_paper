@@ -1,11 +1,11 @@
 """Figure: the simulation's qualitative setting over N_DRAW independent noise draws.
 
 The ground truth on the left; Noisy, Standard MPPCA and Proposed in rows, one draw per column,
-each on the middle slice at the middle b SHOW_B volume, with the simulations figure's zoom box
-and magnifier. Draw r has seed SEED + 1000 r, so draw 1 is the simulations figure's panel a.
+each on the middle slice at the middle b SHOW_B volume, with the simulation figure's zoom box
+and magnifier. Draw r has seed SEED + 1000 r, so draw 1 is the simulation figure's panel a.
 The slices are saved with their settings and rerun only when they change.
 
-    python scripts/figures/supplementary/noise_reps_sim.py
+    python scripts/figures/supp/simulation_noise_draws.py
 """
 
 import camppca
@@ -26,8 +26,8 @@ from camppca_paper.simulation import (
 from camppca_paper.zoom import box, zoomed
 
 N_DRAW = 5
-CACHE = WORK / "simulations_reps.npz"
-OUT = RESULTS / "supplementary/noise_reps_sim.pdf"
+CACHE = WORK / "simulation_noise_draws.npz"
+OUT = RESULTS / "supp/simulation_noise_draws.pdf"
 ROWS = (("noisy", "Noisy"), ("standard", "Standard MPPCA"), ("proposed", "Proposed"))
 
 

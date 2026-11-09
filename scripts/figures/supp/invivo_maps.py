@@ -9,7 +9,7 @@ percentile of Standard MPPCA's. Its label is the median over the whole white mat
 
 Reads each set's frames (mask, wm_prob) and maps.
 
-    python scripts/figures/supplementary/invivo_maps.py
+    python scripts/figures/supp/invivo_maps.py
 """
 
 import json
@@ -34,11 +34,11 @@ COL_W, GAP = 1.25, 0.18     # column width in inches, gap between maps in rows
 def sets():
     """(output, frame folder, maps folder, [(session name, column title)], white-matter CoV) per set."""
     out = []
-    for which, name in (("within", "invivo_within_scanner_maps"), ("cross", "invivo_across_scanner_maps")):
+    for which, name in (("within", "invivo_repeat_harmony_maps"), ("cross", "invivo_reprod_harmony_maps")):
         label = ((lambda s: f"Session {s.run}") if which == "within"
                  else (lambda s: f"{VENDOR[s.site]}\n{SITES[s.site]}"))
         base = WORK / SHOW[which]
-        out.append((RESULTS / f"supplementary/{name}.pdf", base / "frames" / which, base / "maps" / which,
+        out.append((RESULTS / f"supp/{name}.pdf", base / "frames" / which, base / "maps" / which,
                     [(s.name, label(s)) for s in shown_sessions(which)], metrics(which)[SHOW[which]]["cov"]))
     part = edden.work("magnitude")
     out.append((RESULTS / "supplementary/invivo_within_scanner_edden_maps.pdf", part / "frames", part / "maps",
