@@ -1,5 +1,4 @@
-"""Stage 3: each arm against the reference, in the scored tissue (`camppca_paper.exvivo_mouse.scored`)
-where both arms wrote a noise level.
+"""Stage 3: each arm against the reference, in the brain mask.
 
     noise   sigma-hat over the true level, voxel by voxel: median, 10th and 90th percentile
     signal  per shell, the mean squared error against the reference as % of Noisy's. The
@@ -18,10 +17,12 @@ import json
 import nibabel as nib
 import numpy as np
 
-from camppca_paper.exvivo_mouse import BVAL, MAPS, NATIVE, scored
+from camppca_paper.exvivo_mouse import BVAL, MAPS, NATIVE
 from camppca_paper.fits import MAPS as NAMES
 from camppca_paper.paths import RESULTS
 
+# The reference holds a tenth of Noisy's noise variance. With the two independent, Noisy minus
+# the reference has variance 11/10 of Noisy's, and the reference's share of it is 1/11.
 AVG_SHARE = 1 / 11
 WM_FA = 0.25
 OUT = RESULTS / "exvivo_mouse/metrics.json"
@@ -35,26 +36,24 @@ def load(name, where=None):
 if __name__ == "__main__":
     mask = load("mask") > 0
     true = load("sigma_true")
-    floor = 1e-3 * np.median(true[mask])
-    valid = scored(mask) & (load("sigma_standard") > floor) & (load("sigma_proposed") > floor)
-    res = {"n_voxels": int(valid.sum()), "noise": {}, "signal": {}, "maps": {}}
+    res = {"n_voxels": int(mask.sum()), "noise": {}, "signal": {}, "maps": {}}
     for arm in ("standard", "proposed"):
-        r = load(f"sigma_{arm}", valid) / true[valid]
+        r = load(f"sigma_{arm}", mask) / true[mask]
         res["noise"][arm] = {"median": float(np.median(r)), "p10": float(np.percentile(r, 10)),
                              "p90": float(np.percentile(r, 90))}
     shell = np.round(np.loadtxt(BVAL).ravel(), -3)
-    ref, noisy = load("reference", valid), load("noisy", valid)
+    ref, noisy = load("reference", mask), load("noisy", mask)
     for b in np.unique(shell):
         v = shell == b
         n2 = np.mean((noisy[:, v] - ref[:, v]) ** 2)
         own = AVG_SHARE * n2
-        res["signal"][f"b{int(b)}"] = {arm: float(100 * (np.mean((load(arm, valid)[:, v] - ref[:, v]) ** 2) - own)
+        res["signal"][f"b{int(b)}"] = {arm: float(100 * (np.mean((load(arm, mask)[:, v] - ref[:, v]) ** 2) - own)
                                                   / (n2 - own)) for arm in ("standard", "proposed")}
 
     def fitted(arm, m):
         return np.asarray(nib.load(MAPS / f"{arm}_{m}.nii.gz").dataobj, np.float64)
 
-    wm = (fitted("reference", "FA") > WM_FA) & scored(mask)
+    wm = (fitted("reference", "FA") > WM_FA) & mask
     res["n_wm_voxels"] = int(wm.sum())
     for m in NAMES:
         ref_m = fitted("reference", m)[wm]

@@ -21,7 +21,7 @@ import numpy as np
 from matplotlib.gridspec import GridSpec
 from scipy.ndimage import gaussian_filter
 
-from camppca_paper.exvivo_mouse import BVAL, NATIVE, scored, shown
+from camppca_paper.exvivo_mouse import BVAL, NATIVE, shown
 from camppca_paper.invivo import Key, draw_row, panel_letters
 from camppca_paper.paths import RESULTS
 from camppca_paper.style import CMP, CNO, COU
@@ -74,13 +74,10 @@ def draw_images(fig, spec, z):
 
 
 def noise_panel(ax, z):
-    valid = scored(z["mask"])
-    floor = 1e-3 * np.median(z["sigma_true"][z["mask"]])
-    valid &= (z["sigma_standard"] > floor) & (z["sigma_proposed"] > floor)
-    x = z["sigma_true"][valid]
-    lo, hi = np.percentile(np.concatenate([x, z["sigma_standard"][valid], z["sigma_proposed"][valid]]), (0.5, 99.5))
+    x = z["sigma_true"][z["mask"]]
+    lo, hi = np.percentile(np.concatenate([x, z["sigma_standard"][z["mask"]], z["sigma_proposed"][z["mask"]]]), (0.5, 99.5))
     for key, col in (("sigma_standard", CMP), ("sigma_proposed", COU)):
-        y = z[key][valid]
+        y = z[key][z["mask"]]
         H, xe, ye = np.histogram2d(x, y, bins=150, range=((lo, hi), (lo, hi)))
         H = gaussian_filter(H, 1.2).T
         order = np.sort(H.ravel())[::-1]
