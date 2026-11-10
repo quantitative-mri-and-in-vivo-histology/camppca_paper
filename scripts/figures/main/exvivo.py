@@ -1,11 +1,11 @@
 """Figure: the ex vivo mouse brain against its twenty-average reference.
 
 a       the middle slice, flipped along y as Henriques et al. show it, at the middle b SHELL
-        volume. Columns Reference, Noisy, Standard MPPCA and Proposed. Rows the image, the image
+        volume. Columns Reference, Undenoised, Standard MPPCA and Proposed. Rows the image, the image
         minus the reference, and the noise level, the true one under Reference
 b       sigma-hat against the true level, voxel by voxel: smoothed 2-D histograms with contours
         around 50 and 90 % of the voxels, a cross at the medians
-c       signal mean squared error per shell, as % of Noisy's
+c       signal mean squared error per shell, as % of Undenoised's
 d, e    DTI and DKI RMS difference from the reference's maps in white matter
 
 Reads data/analyses/exvivo_mouse/native and data/results/exvivo_mouse/metrics.json.
@@ -28,7 +28,7 @@ from camppca_paper.style import CMP, CNO, COU
 
 OUT = RESULTS / "main/exvivo.pdf"
 SHELL = 2000
-ARMS = (("noisy", "Noisy", CNO), ("standard", "Standard MPPCA", CMP), ("proposed", "Proposed", COU))
+ARMS = (("noisy", "Undenoised", CNO), ("standard", "Standard MPPCA", CMP), ("proposed", "Proposed", COU))
 
 
 def load(name):
@@ -124,7 +124,7 @@ def figure(z, res):
     def maps(names):
         return lambda ax: bars(ax, [res["maps"][m] for m in names], every)
 
-    panels = [("Signal level", "MSE relative to Noisy [%]", [(f"b {s[1:]}", None) for s in shells], two,
+    panels = [("Signal level", "MSE relative to Undenoised [%]", [(f"b {s[1:]}", None) for s in shells], two,
                lambda ax: bars(ax, [res["signal"][s] for s in shells], two)),
               ("DTI", "RMS difference to\nreference [%]", [("FA", None), ("MD", None)], every, maps(("FA", "MD"))),
               ("DKI", "RMS difference to\nreference [%]", [("MK", None), ("AK", None), ("RK", None)], every,

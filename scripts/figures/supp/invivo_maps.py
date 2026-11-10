@@ -1,7 +1,7 @@
 """Figures: FA and MK maps in every session of a set, on the slice of the set's main figure, in
 white matter: the T1's posterior above WM_PV, as in the metrics. The sets are ON-Harmony's shown
 participant within and across scanners (`camppca_paper.harmony_figure`) and the EDDEN runs, magnitude
-and complex. Sessions across; for each map Noisy, Standard MPPCA and Proposed one above the
+and complex. Sessions across; for each map Undenoised, Standard MPPCA and Proposed one above the
 other, with NORDIC for the complex runs, on one grey scale from the 5th to the 99th percentile of
 the denoised panels. A last column gives each arm's CoV across sessions per voxel, on one scale
 per map up to the 95th percentile of Standard MPPCA's. Its label is the median over the whole

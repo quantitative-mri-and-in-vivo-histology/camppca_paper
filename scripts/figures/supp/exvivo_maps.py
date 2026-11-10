@@ -19,7 +19,7 @@ from camppca_paper.style import MAP_SCALE, MAP_UNITS
 
 OUT = RESULTS / "supp/exvivo_maps.pdf"
 NAMES = ("FA", "MD", "MK", "AK", "RK")
-ARMS = (("reference", "Reference (20-average)"), ("noisy", "Noisy"), ("standard", "Standard MPPCA"),
+ARMS = (("reference", "Reference (20-average)"), ("noisy", "Undenoised"), ("standard", "Standard MPPCA"),
         ("proposed", "Proposed"))
 WIDTH, LEFT, RIGHT, GAP = 9.0, 0.07, 0.9, 0.02     # inches, and the grid's margins and gaps as fractions
 

@@ -3,9 +3,9 @@ on one scanner).
 
 a       one axial slice of run-01 with a region boxed, then the region in every run, one row per
         arm. Each run shows the b SHELL volume whose direction is closest to run-01's VOLUME,
-        divided by that run's mean Noisy b0 on the slice in the mask. One grey scale
+        divided by that run's mean Undenoised b0 on the slice in the mask. One grey scale
 b       noise level of each denoiser over the mean b0, mean over the runs
-c       signal error per shell, variance (light) and bias squared (dark), as % of Noisy's,
+c       signal error per shell, variance (light) and bias squared (dark), as % of Undenoised's,
         magnitude only
 d, e    DTI and DKI coefficient of variation across the runs, median over white matter
 
@@ -40,7 +40,7 @@ from .harmony_figure import (
 from .paths import RESULTS
 from .style import CMP, CND, CNO, COU
 
-ARMS = (("raw", "Noisy", CNO), ("standard", "Standard MPPCA", CMP), ("proposed", "Proposed", COU))
+ARMS = (("raw", "Undenoised", CNO), ("standard", "Standard MPPCA", CMP), ("proposed", "Proposed", COU))
 NORDIC = ("nordic2", "NORDIC", CND)
 
 
@@ -142,7 +142,7 @@ def draw(res, ims, m, arms):
 
     panels = [("Noise level", "$\\hat\\sigma$ / mean b0 [%]", [("", None)], two, lambda ax: bars(ax, [noise], two))]
     if "signal" in res:
-        panels.append(("Signal level", "MSE relative to Noisy [%]", [("b 1000", None), ("b 2000", None)], denoised,
+        panels.append(("Signal level", "MSE relative to Undenoised [%]", [("b 1000", None), ("b 2000", None)], denoised,
                        lambda ax: signal_bars(ax, res["signal"], denoised)))
     panels += [("DTI", "CoV across sessions [%]", [("FA", None), ("MD", None)], every, cv(("FA", "MD"))),
               ("DKI", "CoV across sessions [%]", [("MK", None), ("AK", None), ("RK", None)], every,

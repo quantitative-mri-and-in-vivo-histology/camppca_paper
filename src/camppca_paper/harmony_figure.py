@@ -4,7 +4,7 @@
             region in every session of the set, one row per arm. Each session shows the b SHELL
             volume whose direction is closest to the first session's VOLUME, divided by that
             session's mean b0 in the mask. One grey scale within; across scanners one per scanner
-            for the regions, ROI_WINDOW percentiles of its Noisy region
+            for the regions, ROI_WINDOW percentiles of its Undenoised region
     below   the noise level of Standard MPPCA and Proposed over the mean b0 (one point per
             participant within, per scanner across), the signal error (within), and the DTI and
             DKI coefficient of variation, every participant joined across the arms, a bar at each
@@ -33,14 +33,14 @@ SHELL = 2000
 VOLUME = 30                     # which b SHELL volume of the first session sets the direction
 SLICE_AT = 0.6                  # axial slice, fraction of the mask's extent from the bottom
 BOX = (0.30, 0.70, 0.60, 0.98)  # region: row and column fractions of the brain's bounding box
-ROI_WINDOW = (1, 99)            # across scanners: each region between these Noisy percentiles
+ROI_WINDOW = (1, 99)            # across scanners: each region between these Undenoised percentiles
 ROW_H = 1.62                    # inches per row of point panels
 W, STEP, GAP = 0.22, 0.27, 0.25  # bar width, arm spacing in a group, extra space between groups
 PANEL_GAP = 0.1                 # between point panels, figure fraction
 VENDOR = {"OXF1PRI": "Siemens", "OXF2PRI": "Siemens", "OXF3TRI": "Siemens", "NOT1ACH": "Philips",
           "NOT2ING": "Philips", "NOT4GEP": "GE", "OXF4GEP": "GE"}
 CROSS_ORDER = ("OXF1PRI", "OXF2PRI", "OXF3TRI", "NOT1ACH", "NOT2ING", "OXF4GEP", "NOT4GEP")
-ARMS = (("raw", "Noisy", CNO), ("standard", "Standard MPPCA", CMP), ("proposed", "Proposed", COU))
+ARMS = (("raw", "Undenoised", CNO), ("standard", "Standard MPPCA", CMP), ("proposed", "Proposed", COU))
 
 
 def metrics(which):
@@ -101,7 +101,7 @@ def draw_images(fig, spec, which, arrows=None):
     brain = (slice(r0, r1 + 1), slice(c0, c1 + 1))
     first = ses[0].name
     lo, hi = np.percentile(np.concatenate([ims[first, arm][m] for arm, *_ in ARMS]), (0.5, 99.5))
-    # cross: each scanner's region on its own grey scale, from its Noisy region (contrast differs by scanner)
+    # cross: each scanner's region on its own grey scale, from its Undenoised region (contrast differs by scanner)
     window = {s.name: (np.percentile(ims[s.name, "raw"][y0:y1, x0:x1], ROI_WINDOW) if which == "cross" else (lo, hi))
               for s in ses}
     label = (lambda s: f"Session {s.run}") if which == "within" else (lambda s: f"{VENDOR[s.site]}\n{SITES[s.site]}")
@@ -205,7 +205,7 @@ def rows(which, correction=False):
 
     maps = [("DTI", f"CoV across {across} [%]", cv(("FA", "MD")), three),
             ("DKI", f"CoV across {across} [%]", cv(("MK", "AK", "RK")), three)]
-    bars = ("Signal level", "MSE relative to Noisy [%]", [("b 1000", None), ("b 2000", None)], None,
+    bars = ("Signal level", "MSE relative to Undenoised [%]", [("b 1000", None), ("b 2000", None)], None,
             lambda ax: signal_bars(ax, d, list(d)))
     scanners = [(SITES[site], None) for site in correction_sites(which)]
     first = [("Noise level", "$\\hat\\sigma$ / mean b0 [%]", [("", None)], None, lambda ax: noise_points(ax, which))]
