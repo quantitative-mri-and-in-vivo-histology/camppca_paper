@@ -153,7 +153,7 @@ def draw(res, ims, m, arms):
         inside = Key("bars", "Variance (bright)\nand bias$^2$ (dark)", tuple(c for _, c in denoised))
         axes[1].set_ylim(top=1.35 * axes[1].get_ylim()[1])
         axes[1].legend(handles=[inside], handler_map={inside: inside}, frameon=False, fontsize=6.5, loc="upper left",
-                       handlelength=2.2, labelspacing=0.2)
+                       bbox_to_anchor=(-0.04, 1), handlelength=1.6, handletextpad=0.5, labelspacing=0.2)
     handles = [Key("bar", t, (c,)) for _, t, c in arms]
     fig.legend(handles=handles, handler_map={h: h for h in handles}, frameon=False, fontsize=8, ncol=len(handles),
                loc="center", bbox_to_anchor=(0.5, axes[0].get_position().y1 + 0.42 / height))

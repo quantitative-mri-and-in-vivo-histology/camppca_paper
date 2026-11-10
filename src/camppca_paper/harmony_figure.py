@@ -332,7 +332,8 @@ def figure(which, correction=False, fig_w=8.64, top_h=0.14, row_h=ROW_H, bars_ke
         inside = Key("bars", "Variance (bright)\nand bias$^2$ (dark)", (CMP, COU))
         bars_ax.set_ylim(top=1.35 * bars_ax.get_ylim()[1])
         bars_ax.legend(handles=[inside], handler_map={inside: inside}, frameon=False, fontsize=6.5,
-                       loc="upper left", handlelength=1.6, labelspacing=0.2)
+                       loc="upper left", bbox_to_anchor=(-0.04, 1), handlelength=1.6, handletextpad=0.5,
+                       labelspacing=0.2)
     fig.legend(handles=handles, handler_map={h: h for h in handles}, frameon=False, fontsize=8, ncol=len(handles),
                loc="center", bbox_to_anchor=(0.5, first.get_position().y1 + 0.42 / height))
     panel_letters(fig, placed)
