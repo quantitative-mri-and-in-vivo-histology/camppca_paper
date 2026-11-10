@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import t as student_t
 
-from camppca_paper.invivo import VENDOR, correction_sites, metrics
+from camppca_paper.harmony_figure import VENDOR, correction_sites, metrics
 from camppca_paper.on_harmony import PARTICIPANTS, SITES, sessions
 from camppca_paper.paths import RESULTS
 from camppca_paper.registration import displacement

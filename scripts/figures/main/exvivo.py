@@ -22,7 +22,7 @@ from matplotlib.gridspec import GridSpec
 from scipy.ndimage import gaussian_filter
 
 from camppca_paper.exvivo_mouse import BVAL, NATIVE, shown
-from camppca_paper.invivo import Key, draw_row, panel_letters
+from camppca_paper.harmony_figure import Key, draw_row, panel_letters
 from camppca_paper.paths import RESULTS
 from camppca_paper.style import CMP, CNO, COU
 
@@ -97,7 +97,7 @@ def noise_panel(ax, z):
 
 
 def bars(ax, groups, arms):
-    from camppca_paper.invivo import STEP, W, centre
+    from camppca_paper.harmony_figure import STEP, W, centre
     n = len(arms)
     for i, vals in enumerate(groups):
         for k, (arm, col) in enumerate(arms):

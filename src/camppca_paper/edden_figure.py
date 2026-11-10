@@ -9,7 +9,7 @@ c       signal error per shell, variance (light) and bias squared (dark), as % o
         magnitude only
 d, e    DTI and DKI coefficient of variation across the runs, median over white matter
 
-Bar width and spacing as in `camppca_paper.invivo`.
+Bar width and spacing as in `camppca_paper.harmony_figure`.
 
 Reads data/analyses/edden/<part>/frames and data/results/edden/<part>.json.
 """
@@ -25,7 +25,7 @@ from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 from matplotlib.patches import Rectangle
 
 from .edden import RUNS, work
-from .invivo import (
+from .harmony_figure import (
     SHELL,
     SLICE_AT,
     STEP,

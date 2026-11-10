@@ -1,6 +1,6 @@
 """Figures: FA and MK maps in every session of a set, on the slice of the set's main figure, in
 white matter: the T1's posterior above WM_PV, as in the metrics. The sets are ON-Harmony's shown
-participant within and across scanners (`camppca_paper.invivo`) and the EDDEN runs, magnitude
+participant within and across scanners (`camppca_paper.harmony_figure`) and the EDDEN runs, magnitude
 and complex. Sessions across; for each map Noisy, Standard MPPCA and Proposed one above the
 other, with NORDIC for the complex runs, on one grey scale from the 5th to the 99th percentile of
 the denoised panels. A last column gives each arm's CoV across sessions per voxel, on one scale
@@ -22,7 +22,7 @@ from matplotlib.gridspec import GridSpec
 
 from camppca_paper import edden
 from camppca_paper.edden_figure import NORDIC
-from camppca_paper.invivo import ARMS, SHOW, SLICE_AT, VENDOR, metrics, shown_sessions
+from camppca_paper.harmony_figure import ARMS, SHOW, SLICE_AT, VENDOR, metrics, shown_sessions
 from camppca_paper.on_harmony import SITES, WORK
 from camppca_paper.paths import RESULTS
 from camppca_paper.style import MAP_SCALE, MAP_UNITS
