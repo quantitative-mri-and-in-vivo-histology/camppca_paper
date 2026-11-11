@@ -24,7 +24,7 @@ from scipy.ndimage import gaussian_filter
 from camppca_paper.exvivo_mouse import BVAL, NATIVE, shown
 from camppca_paper.harmony_figure import Key, draw_row, panel_letters
 from camppca_paper.paths import RESULTS
-from camppca_paper.style import CMP, CNO, COU
+from camppca_paper.style import B_AXIS, CMP, CNO, COU
 
 OUT = RESULTS / "main/exvivo.pdf"
 SHELL = 2000
@@ -124,13 +124,14 @@ def figure(z, res):
     def maps(names):
         return lambda ax: bars(ax, [res["maps"][m] for m in names], every)
 
-    panels = [("Signal level", "MSE relative to Undenoised [%]", [(f"b {s[1:]}", None) for s in shells], two,
+    panels = [("Signal level", "MSE relative to Undenoised [%]", [(s[1:], None) for s in shells], two,
                lambda ax: bars(ax, [res["signal"][s] for s in shells], two)),
               ("DTI", "RMS difference to\nreference [%]", [("FA", None), ("MD", None)], every, maps(("FA", "MD"))),
               ("DKI", "RMS difference to\nreference [%]", [("MK", None), ("AK", None), ("RK", None)], every,
                maps(("MK", "AK", "RK")))]
     row = GridSpec(1, 1, figure=fig, left=left + 0.02 + b_w + 0.1, right=right, top=hi, bottom=lo)
     axes = draw_row(fig, row[0], ["sample"], panels)
+    axes[0].set_xlabel(B_AXIS, fontsize=9)
     handles = [Key("bar", t, (c,)) for _, t, c in ARMS]
     fig.legend(handles=handles, handler_map={h: h for h in handles}, frameon=False, fontsize=8, ncol=len(handles),
                loc="center", bbox_to_anchor=(0.5, hi + 0.42 / height))

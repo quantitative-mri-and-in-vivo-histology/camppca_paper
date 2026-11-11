@@ -46,7 +46,7 @@ def sets():
                              ("complex", "invivo_repeat_edden_complex_maps", ARMS[:2] + (NORDIC,) + ARMS[2:])):
         base = edden.work(part)
         out.append((RESULTS / f"supp/{name}.pdf", base / "frames", base / "maps",
-                    [(r, f"Run {i}") for i, r in enumerate(edden.RUNS, start=1)],
+                    [(r, f"Session {i}") for i, r in enumerate(edden.RUNS, start=1)],
                     json.loads((RESULTS / f"edden/{part}.json").read_text())["cov"], arms))
     return out
 

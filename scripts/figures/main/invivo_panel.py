@@ -4,7 +4,9 @@ a   prediction error of Standard MPPCA's noise level against the correction, one
     by vendor, medians dashed, the distributions in strips on top and on the right
 b   the correction with the level only and with the correlation only, as % of the full model's
 c   the correlation table along phase encode, readout and slice, lags 1 to REACH, one thin line
-    per scan, the vendor medians and the mean over all scans thick
+    per scan, the vendor medians and the mean over all scans thick. A table reaches as far as its
+    patch, so scans with a smaller patch stop earlier, and each median and mean is over the scans
+    that reach the lag
 d   sigma-hat over sigma on pure noise whitened with the other subject's correlation, the mean
     over the other configurations, or none
 
@@ -23,7 +25,7 @@ from camppca_paper.paths import RESULTS
 from camppca_paper.style import VENDOR_COLOURS
 
 OUT = RESULTS / "main/invivo_panel.pdf"
-REACH = 4
+REACH = 6
 TITLE = dict(fontsize=10, fontweight="bold", pad=10)
 
 
@@ -33,6 +35,7 @@ def rows():
         rho = np.asarray(r["rho"])
         c = rho.shape[0] // 2
         x, y, z = rho[c:c + REACH + 1, c, 0], rho[c, c:c + REACH + 1, 0], rho[c, c, :REACH + 1]
+        x, y, z = (np.pad(np.asarray(a, float), (0, REACH + 1 - len(a)), constant_values=np.nan) for a in (x, y, z))
         pe, ro = (y, x) if r["pe_axis"] == 1 else (x, y)
         out.append(r | dict(vendor=vendor(r["config"]), profile={"Phase encode": pe, "Readout": ro, "Slice": z}))
     return out
@@ -94,6 +97,14 @@ def panel_components(ax, rs):
     ax.set_ylabel("Correction\n[% of the full model's]")
 
 
+def across(p, fn):
+    """fn over scans at each lag, over the scans that reach it, NaN where none does."""
+    out = np.full(p.shape[1], np.nan)
+    has = ~np.isnan(p).all(0)
+    out[has] = fn(p[:, has], 0)
+    return out
+
+
 def panel_profiles(axes, rs):
     lags = np.arange(1, REACH + 1)
     for ax, direction in zip(axes, ("Phase encode", "Readout", "Slice"), strict=True):
@@ -101,9 +112,9 @@ def panel_profiles(axes, rs):
             p = np.array([r["profile"][direction] for r in rs if r["vendor"] == v])
             for line in p:
                 ax.plot(lags, line[1:], color=col, lw=0.6, alpha=0.45)
-            ax.plot(lags, np.median(p, 0)[1:], color=col, lw=2.4, label=f"{v} ({len(p)})")
-        ax.plot(lags, np.mean([r["profile"][direction] for r in rs], 0)[1:], color="0.35", lw=3.2, zorder=5,
-                label=f"Mean ({len(rs)})")
+            ax.plot(lags, across(p, np.nanmedian)[1:], color=col, lw=2.4, label=f"{v} ({len(p)})")
+        ax.plot(lags, across(np.array([r["profile"][direction] for r in rs]), np.nanmean)[1:], color="0.35",
+                lw=3.2, zorder=5, label=f"Mean ({len(rs)})")
         ax.axhline(0, color="0.5", lw=0.8)
         ax.set_xticks(lags)
         ax.set_xlabel(f"{direction} lag [voxels]")

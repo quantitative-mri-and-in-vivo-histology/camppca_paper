@@ -11,7 +11,7 @@ from camppca_paper.harmony_figure import figure
 from camppca_paper.paths import RESULTS
 
 OUT = RESULTS / "main/invivo_reprod_harmony.pdf"
-ARROWS = {"OXF1PRI": [(23, 9, 4.5, 4.5)], "OXF2PRI": [(21, 11, 4.5, 4.5)],
+ARROWS = {"OXF1PRI": [(18, 4, 4.5, 4.5)], "OXF2PRI": [(8, 14, 4.5, -4.5)],
           "NOT1ACH": [(24, 11, 4.5, 4.5)], "NOT2ING": [(10, 5, 4.5, 4.5)],
           "OXF4GEP": [(8, 14, 4.5, 4.5)], "NOT4GEP": [(24, 18, 4.5, -4.5)]}
 

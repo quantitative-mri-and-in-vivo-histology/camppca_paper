@@ -38,7 +38,7 @@ from .harmony_figure import (
     panel_letters,
 )
 from .paths import RESULTS
-from .style import CMP, CND, CNO, COU
+from .style import B_AXIS, CMP, CND, CNO, COU
 
 ARMS = (("raw", "Undenoised", CNO), ("standard", "Standard MPPCA", CMP), ("proposed", "Proposed", COU))
 NORDIC = ("nordic2", "NORDIC", CND)
@@ -140,9 +140,9 @@ def draw(res, ims, m, arms):
     def cv(maps):
         return lambda ax: bars(ax, [{a: 100 * res["cov"][x][a] for a, _ in every} for x in maps], every)
 
-    panels = [("Noise level", "$\\hat\\sigma$ / mean b0 [%]", [("", None)], two, lambda ax: bars(ax, [noise], two))]
+    panels = [("Noise level", "$\\hat\\sigma$ relative to mean $b = 0$ [%]", [("", None)], two, lambda ax: bars(ax, [noise], two))]
     if "signal" in res:
-        panels.append(("Signal level", "MSE relative to Undenoised [%]", [("b 1000", None), ("b 2000", None)], denoised,
+        panels.append(("Signal level", "MSE relative to Undenoised [%]", [("1000", None), ("2000", None)], denoised,
                        lambda ax: signal_bars(ax, res["signal"], denoised)))
     panels += [("DTI", "CoV across sessions [%]", [("FA", None), ("MD", None)], every, cv(("FA", "MD"))),
               ("DKI", "CoV across sessions [%]", [("MK", None), ("AK", None), ("RK", None)], every,
@@ -152,6 +152,7 @@ def draw(res, ims, m, arms):
     if "signal" in res:
         inside = Key("bars", "Variance (bright)\nand bias$^2$ (dark)", tuple(c for _, c in denoised))
         axes[1].set_ylim(top=1.35 * axes[1].get_ylim()[1])
+        axes[1].set_xlabel(B_AXIS, fontsize=9)
         axes[1].legend(handles=[inside], handler_map={inside: inside}, frameon=False, fontsize=6.5, loc="upper left",
                        bbox_to_anchor=(-0.04, 1), handlelength=1.6, handletextpad=0.5, labelspacing=0.2)
     handles = [Key("bar", t, (c,)) for _, t, c in arms]

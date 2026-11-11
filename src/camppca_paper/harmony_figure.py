@@ -26,7 +26,7 @@ from matplotlib.patches import Rectangle
 
 from .on_harmony import SITES, WORK, sessions
 from .paths import RESULTS
-from .style import CMP, CNO, COU
+from .style import B_AXIS, CMP, CNO, COU
 
 SHOW = {"within": "sub-15320", "cross": "sub-16975"}
 SHELL = 2000
@@ -205,10 +205,10 @@ def rows(which, correction=False):
 
     maps = [("DTI", f"CoV across {across} [%]", cv(("FA", "MD")), three),
             ("DKI", f"CoV across {across} [%]", cv(("MK", "AK", "RK")), three)]
-    bars = ("Signal level", "MSE relative to Undenoised [%]", [("b 1000", None), ("b 2000", None)], None,
+    bars = ("Signal level", "MSE relative to Undenoised [%]", [("1000", None), ("2000", None)], None,
             lambda ax: signal_bars(ax, d, list(d)))
     scanners = [(SITES[site], None) for site in correction_sites(which)]
-    first = [("Noise level", "$\\hat\\sigma$ / mean b0 [%]", [("", None)], None, lambda ax: noise_points(ax, which))]
+    first = [("Noise level", "$\\hat\\sigma$ relative to mean $b = 0$ [%]", [("", None)], None, lambda ax: noise_points(ax, which))]
     first += [("Noise level correction", "$\\sigma_{proposed} / \\sigma_{standard} - 1$ [%]",
                scanners, None,
                lambda ax: correction_points(ax, which))] if correction else []
@@ -328,6 +328,8 @@ def figure(which, correction=False, fig_w=8.64, top_h=0.14, row_h=ROW_H, bars_ke
     handles = [Key("point", t, (c,)) for _, t, c in ARMS]
     if which == "within" and not bars_key_inside:
         handles += [Key("bars", "Variance (bright) and bias$^2$ (dark)", (CMP, COU))]
+    if bars_ax is not None:
+        bars_ax.set_xlabel(B_AXIS, fontsize=9)
     if which == "within" and bars_key_inside and bars_ax is not None:
         inside = Key("bars", "Variance (bright)\nand bias$^2$ (dark)", (CMP, COU))
         bars_ax.set_ylim(top=1.35 * bars_ax.get_ylim()[1])

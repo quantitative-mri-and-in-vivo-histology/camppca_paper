@@ -5,5 +5,8 @@ CNO = "#707070"                   # Undenoised
 CND = "#b7791f"                   # NORDIC
 RCM = "RdBu_r"                    # signed residuals
 VENDOR_COLOURS = {"Siemens": "#009E73", "Philips": "#E69F00", "GE": "#CC79A7"}
+B_AXIS = "$b$ [s/mm$^2$]"           # axis label under shells, ticks the b-values
 MAP_SCALE = {"MD": 1e3}           # diffusion maps as drawn, MD in 10^-3 mm^2/s
+
+
 MAP_UNITS = {"FA": "FA", "MD": "MD [$10^{-3}$ mm$^2$/s]", "MK": "MK", "AK": "AK", "RK": "RK"}

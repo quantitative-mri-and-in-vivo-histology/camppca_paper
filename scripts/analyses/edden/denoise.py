@@ -1,7 +1,7 @@
 """Stage 1: Standard MPPCA and Proposed on every run's magnitude, and on its real part.
 
-    real     complex only, `camppca phase` with its defaults: magnitude and phase rotated onto
-             the real axis
+    real     complex only, `camppca phase` with the Siemens phase range PHASE_RANGE: magnitude
+             and phase rotated onto the real axis
     mask     FSL bet -R -f 0.1 on the mean b0 of the input, holes filled
              (`camppca_paper.masks.b0_brain_mask`)
     arms     Standard MPPCA (camppca.denoise_mppca) and Proposed (camppca.denoise_camppca), both
@@ -27,6 +27,7 @@ from camppca_paper.masks import b0_brain_mask
 from camppca_paper.tools import run
 
 B0_MAX = 100
+PHASE_RANGE = (-4096, 4096)
 OUTPUTS = ("standard", "proposed", "sigma_standard", "sigma_proposed", "brain_mask_denoising")
 
 
@@ -37,7 +38,8 @@ def denoise(part, r):
     t0 = time.time()
     out.mkdir(parents=True, exist_ok=True)
     if part == "complex" and not (out / "real.nii.gz").exists():
-        run("camppca", "phase", series("AP", r, "mag"), series("AP", r, "phase"), out / "real.nii.gz")
+        run("camppca", "phase", "--phase-range", *PHASE_RANGE, series("AP", r, "mag"), series("AP", r, "phase"),
+            out / "real.nii.gz")
     img = nib.load(raw(part, r))
     data = np.asarray(img.dataobj, np.float32)
     b = np.loadtxt(bval()).ravel()
