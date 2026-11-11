@@ -6,7 +6,7 @@ mix (`volume_subsets`). The patch stays at PATCH, so the aspect ratio changes th
 Both arms are scored over the brain.
 
     a   sigma-hat over the true level, median over brain voxels and draws
-    b   MSE against the truth over brain voxels and every volume, as % of Noisy's
+    b   MSE against the truth over brain voxels and every volume, as % of Undenoised's
 
 The scores are saved with their settings and rerun only when they change.
 
@@ -53,7 +53,7 @@ def cells():
 
 
 def run(signal, mask, bval):
-    """Per cell and N: the median sigma-hat over sigma and the MSE as % of Noisy's, per arm."""
+    """Per cell and N: the median sigma-hat over sigma and the MSE as % of Undenoised's, per arm."""
     subsets = volume_subsets(bval, N_LIST)
     out = {}
     for i, (mix, f_c, f_d) in enumerate(cells()):
@@ -121,7 +121,7 @@ def main():
     fig = plt.figure(figsize=(7.0, 10.4))
     outer = fig.add_gridspec(2, 1, left=0.17, right=0.87, top=0.94, bottom=0.05, hspace=0.2)
     heatmaps(fig, outer[0], res, "ratio", r"$\hat\sigma$ / $\sigma$", "BrBG", NORM, "{:.2f}")
-    heatmaps(fig, outer[1], res, "mse", "MSE [% of Noisy]", "viridis", Normalize(0, 100), "{:.0f}")
+    heatmaps(fig, outer[1], res, "mse", "MSE [% of Undenoised]", "viridis", Normalize(0, 100), "{:.0f}")
     for spec, letter, title in ((outer[0], "a", "Noise level estimation"), (outer[1], "b", "Mean squared error (MSE)")):
         y = spec.get_position(fig).y1 + 0.025
         fig.text(0.52, y, title, ha="center", fontsize=12, fontweight="bold")

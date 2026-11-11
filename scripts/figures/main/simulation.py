@@ -1,7 +1,7 @@
 """Figure: the simulation on the subject phantom.
 
 a   one acquisition at window blend 0.5 and maximum gain 2: image, residual and noise level
-    for ground truth, noisy, Standard MPPCA and Proposed.
+    for ground truth, undenoised, Standard MPPCA and Proposed.
 b-g two sweeps, the gain field alone and the window alone, N_DRAW draws per cell, scored over
     the brain: the true noise level over the thermal level (b, c), sigma-hat over the true level
     (d, e), and the MSE over every volume split into variance and bias squared (f, g).
@@ -55,7 +55,7 @@ def run_quant(signal, mask, bval):
     """Every cell, N_DRAW draws, both arms over the brain.
 
     Per cell: each arm's sigma-hat in the brain per draw, and its variance and bias squared over
-    draws, pooled over brain voxels and volumes. Noisy's too.
+    draws, pooled over brain voxels and volumes. Undenoised's too.
     """
     out = {}
     for i, (mix, f_c, f_d) in enumerate(cells()):
@@ -124,7 +124,7 @@ def sweep_stats(q):
 
 # ---------------------------------------------------------------------------- panel a
 
-COLS = ("Ground truth", "Noisy", "Standard MPPCA", "Proposed")
+COLS = ("Ground truth", "Undenoised", "Standard MPPCA", "Proposed")
 ROWS = ("Image", "Residual", "Noise level")
 
 
@@ -299,7 +299,7 @@ def panels_bg(grid, res):
             ax.tick_params(labelbottom=False)
     grid[0, 0].set_ylabel(r"$\sigma(x)$ / $\sigma_{\mathrm{thermal}}$", fontsize=LABEL)
     grid[1, 0].set_ylabel(r"$\hat{\sigma}(x)$ / $\sigma(x)$", fontsize=LABEL)
-    grid[2, 0].set_ylabel("MSE [% of Noisy]", fontsize=LABEL)
+    grid[2, 0].set_ylabel("MSE [% of Undenoised]", fontsize=LABEL)
     for ax in grid[1]:
         ax.legend(frameon=False, fontsize=TICK, loc="lower left")
     top = max(r[arm]["mse"] for m in res for r in res[m] for arm, _, _ in ARMS)

@@ -17,7 +17,7 @@ from camppca_paper.paths import RESULTS
 from camppca_paper.style import CMP, COU
 
 OUT = RESULTS / "supp/correlation_convergence.pdf"
-KINDS = (("volumes", "Volumes the pattern is estimated from"), ("patches", "Patches the pattern is fitted on"))
+KINDS = (("volumes", "Number of volumes"), ("patches", "Number of patches"))
 
 
 def violin(ax, i, v, col):
@@ -42,12 +42,12 @@ def main():
             violin(ax, i, v, COU)
             print(f"  {kind:8s} {n:4d}  median {np.nanmedian(v):.3f}  range {np.nanmin(v):.3f}-{np.nanmax(v):.3f}")
         violin(ax, len(sizes), none, CMP)
-        ax.set_xticks(range(len(sizes) + 1), [str(n) for n in sizes] + ["None\n(Standard\nMPPCA)"], fontsize=8)
+        ax.set_xticks(range(len(sizes) + 1), [str(n) for n in sizes] + ["Standard\nMPPCA"], fontsize=8)
         ax.set_xlim(-0.6, len(sizes) + 0.6)
         ax.set_xlabel(xlabel, fontsize=9)
-        ax.tick_params(labelsize=8)
-        ax.text(-0.14, 1.02, letter, transform=ax.transAxes, fontsize=14, fontweight="bold")
-    axes[0].set_ylabel(r"$\hat{\sigma}\,/\,\sigma$ on simulated noise", fontsize=9)
+        ax.tick_params(labelsize=8, labelleft=True)
+        ax.set_ylabel(r"$\hat{\sigma}\,/\,\sigma$ on simulated noise", fontsize=9)
+        ax.text(-0.14, 0.99, letter, transform=ax.transAxes, fontsize=14, fontweight="bold")
     fig.tight_layout()
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with plt.rc_context({"savefig.pad_inches": 0.02}):

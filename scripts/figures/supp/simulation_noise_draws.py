@@ -1,6 +1,6 @@
 """Figure: the simulation's qualitative setting over N_DRAW independent noise draws.
 
-The ground truth on the left; Noisy, Standard MPPCA and Proposed in rows, one draw per column,
+The ground truth on the left; Undenoised, Standard MPPCA and Proposed in rows, one draw per column,
 each on the middle slice at the middle b SHOW_B volume, with the simulation figure's zoom box
 and magnifier. Draw r has seed r - 1, so draw 1 is the simulation figure's panel a.
 The slices are saved with their settings and rerun only when they change.
@@ -24,7 +24,7 @@ ROI_CENTRE = (0.586, 0.774)    # zoom box centre, fractions of the panel, bottom
 ROI_SIZE = 0.27                # zoom box side, fraction of the panel's shorter side
 CACHE = WORK / "simulation_noise_draws.npz"
 OUT = RESULTS / "supp/simulation_noise_draws.pdf"
-ROWS = (("noisy", "Noisy"), ("standard", "Standard MPPCA"), ("proposed", "Proposed"))
+ROWS = (("noisy", "Undenoised"), ("standard", "Standard MPPCA"), ("proposed", "Proposed"))
 
 
 def run(signal, mask, bval):

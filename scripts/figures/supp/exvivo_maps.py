@@ -1,7 +1,8 @@
 """Figure: the ex vivo DTI and DKI maps of the twenty-average reference and each arm, on the slice
 of the main ex vivo figure (`camppca_paper.exvivo_mouse.shown`). One row per map, the arms in
 columns, each row on one grey scale from the 1st to the 99th percentile of its panels, MD to the
-90th so the fluid does not set it.
+90th so the fluid does not set it. The white matter of the metrics, the reference's FA above WM_FA,
+is outlined.
 
 Reads data/analyses/exvivo_mouse/maps/.
 
@@ -21,12 +22,15 @@ OUT = RESULTS / "supp/exvivo_maps.pdf"
 NAMES = ("FA", "MD", "MK", "AK", "RK")
 ARMS = (("reference", "Reference (20-average)"), ("noisy", "Undenoised"), ("standard", "Standard MPPCA"),
         ("proposed", "Proposed"))
+WM_FA = 0.25
+CONTOUR = "#39FF14"
 WIDTH, LEFT, RIGHT, GAP = 9.0, 0.07, 0.9, 0.02     # inches, and the grid's margins and gaps as fractions
 
 
 def main():
     mask = np.asarray(nib.load(NATIVE / "mask.nii.gz").dataobj) > 0
     k, aspect, cut = shown(mask)
+    wm = cut(((np.asarray(nib.load(MAPS / "reference_FA.nii.gz").dataobj) > WM_FA) & mask)[:, :, k])
     cell = WIDTH * (RIGHT - LEFT) / (len(ARMS) + (len(ARMS) - 1) * GAP) * aspect
     h = cell * (len(NAMES) + (len(NAMES) - 1) * GAP) + 0.4
     fig, axes = plt.subplots(len(NAMES), len(ARMS), figsize=(WIDTH, h),
@@ -40,6 +44,7 @@ def main():
         for c, (arm, title) in enumerate(ARMS):
             ax = axes[r, c]
             im = ax.imshow(panels[arm], origin="lower", cmap="gray", vmin=lo, vmax=hi)
+            ax.contour(wm.astype(float), levels=[0.5], colors=CONTOUR, linewidths=0.4)
             ax.set_xticks([])
             ax.set_yticks([])
             for sp in ax.spines.values():
