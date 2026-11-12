@@ -4,7 +4,7 @@ sets are ON-Harmony's shown participant within and across scanners (`camppca_pap
 and the EDDEN runs, magnitude and complex. Sessions across; for each map Undenoised, Standard MPPCA
 and Proposed one above the other, with NORDIC for the complex runs, on one grey scale from the 5th
 to the 99th percentile of the denoised panels in white matter. A last column gives each arm's CoV
-across sessions per voxel, on one scale per map up to the 95th percentile of Standard MPPCA's in
+across repeats or scanners per voxel, on one scale per map up to the 95th percentile of Standard MPPCA's in
 white matter. The colour bars sit below each map. The CoV label is the median over the whole white
 matter, from the set's metrics (data/results/on_harmony/<set>.json, data/results/edden/<part>.json).
 
@@ -35,24 +35,25 @@ CONTOUR = "#39FF14"
 
 
 def sets():
-    """(output, frame folder, maps folder, [(session name, column title)], white-matter CoV, arms) per set."""
+    """(output, frame folder, maps folder, [(session name, column title)], white-matter CoV, arms, CoV across) per set."""
     out = []
     for which, name in (("within", "invivo_repeat_harmony_maps"), ("cross", "invivo_reprod_harmony_maps")):
-        label = ((lambda s: f"Session {s.run}") if which == "within"
+        label = ((lambda s: f"Repeat {s.run}") if which == "within"
                  else (lambda s: f"{VENDOR[s.site]}\n{SITES[s.site]}"))
         base = WORK / SHOW[which]
         out.append((RESULTS / f"supp/{name}.pdf", base / "frames" / which, base / "maps" / which,
-                    [(s.name, label(s)) for s in shown_sessions(which)], metrics(which)[SHOW[which]]["cov"], ARMS))
+                    [(s.name, label(s)) for s in shown_sessions(which)], metrics(which)[SHOW[which]]["cov"], ARMS,
+                    "repeats" if which == "within" else "scanners"))
     for part, name, arms in (("magnitude", "invivo_repeat_edden_maps", ARMS),
                              ("complex", "invivo_repeat_edden_complex_maps", ARMS[:2] + (NORDIC,) + ARMS[2:])):
         base = edden.work(part)
         out.append((RESULTS / f"supp/{name}.pdf", base / "frames", base / "maps",
-                    [(r, f"Session {i}") for i, r in enumerate(edden.RUNS, start=1)],
-                    json.loads((RESULTS / f"edden/{part}.json").read_text())["cov"], arms))
+                    [(r, f"Repeat {i}") for i, r in enumerate(edden.RUNS, start=1)],
+                    json.loads((RESULTS / f"edden/{part}.json").read_text())["cov"], arms, "repeats"))
     return out
 
 
-def figure(frame, maps, ses, whole, arms):
+def figure(frame, maps, ses, whole, arms, across):
     mask = np.asarray(nib.load(frame / "mask.nii.gz").dataobj) > 0
     zs = np.where(mask.any((0, 1)))[0]
     k = int(zs[0] + SLICE_AT * (zs[-1] - zs[0]))
@@ -116,7 +117,7 @@ def figure(frame, maps, ses, whole, arms):
             for sp in ax.spines.values():
                 sp.set_visible(False)
             if r == 0:
-                ax.set_title("CoV across\nsessions", fontsize=9.5)
+                ax.set_title(f"CoV across\n{across}", fontsize=9.5)
             covs.append(ax)
         top_left = block[0].get_position()
         fig.text(top_left.x0 - 0.24 / fig_w, top_left.y1 - 0.02 / fig_h, "ab"[j], fontsize=14, fontweight="bold",

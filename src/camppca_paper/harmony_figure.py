@@ -104,7 +104,7 @@ def draw_images(fig, spec, which, arrows=None):
     # cross: each scanner's region on its own grey scale, from its Undenoised region (contrast differs by scanner)
     window = {s.name: (np.percentile(ims[s.name, "raw"][y0:y1, x0:x1], ROI_WINDOW) if which == "cross" else (lo, hi))
               for s in ses}
-    label = (lambda s: f"Session {s.run}") if which == "within" else (lambda s: f"{VENDOR[s.site]}\n{SITES[s.site]}")
+    label = (lambda s: f"Repeat {s.run}") if which == "within" else (lambda s: f"{VENDOR[s.site]}\n{SITES[s.site]}")
     grid = GridSpecFromSubplotSpec(3, len(widths), subplot_spec=spec, width_ratios=widths, wspace=0.02, hspace=0.02)
     for i, (arm, title, _) in enumerate(ARMS):
         ax = fig.add_subplot(grid[i, 0])
@@ -198,7 +198,7 @@ def rows(which, correction=False):
     or (title, y label, [(group label, None)], None, draw(ax)) for a panel drawn its own way."""
     d = metrics(which)
     three = (("raw", CNO), ("standard", CMP), ("proposed", COU))
-    across = "sessions" if which == "within" else "scanners"
+    across = "repeats" if which == "within" else "scanners"
 
     def cv(maps):
         return [(m, lambda s, a, m=m: 100 * d[s]["cov"][m][a]) for m in maps]

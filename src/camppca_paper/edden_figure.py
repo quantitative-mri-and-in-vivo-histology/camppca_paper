@@ -89,13 +89,13 @@ def draw_images(fig, spec, ims, m, arms):
         ax.set_ylabel(title, fontsize=9)
         axes = [ax]
         if i == 0:
-            ax.set_title("Session 1", fontsize=8)
+            ax.set_title("Repeat 1", fontsize=8)
             ax.text(-0.13, 1.03, "a", transform=ax.transAxes, fontsize=14, fontweight="bold")
         for j, r in enumerate(RUNS, start=1):
             bx = fig.add_subplot(grid[i, j])
             bx.imshow(ims[r, arm][y0:y1, x0:x1], cmap="gray", vmin=lo, vmax=hi, interpolation="nearest")
             if i == 0:
-                bx.set_title(f"Session {j}", fontsize=8)
+                bx.set_title(f"Repeat {j}", fontsize=8)
             axes.append(bx)
         for a in axes:
             a.set_xticks([])
@@ -144,8 +144,8 @@ def draw(res, ims, m, arms):
     if "signal" in res:
         panels.append(("Signal level", "MSE relative to Undenoised [%]", [("1000", None), ("2000", None)], denoised,
                        lambda ax: signal_bars(ax, res["signal"], denoised)))
-    panels += [("DTI", "CoV across sessions [%]", [("FA", None), ("MD", None)], every, cv(("FA", "MD"))),
-              ("DKI", "CoV across sessions [%]", [("MK", None), ("AK", None), ("RK", None)], every,
+    panels += [("DTI", "CoV across repeats [%]", [("FA", None), ("MD", None)], every, cv(("FA", "MD"))),
+              ("DKI", "CoV across repeats [%]", [("MK", None), ("AK", None), ("RK", None)], every,
                cv(("MK", "AK", "RK")))]
     row = GridSpec(1, 1, figure=fig, left=left, right=right, top=(bottom_h + row_h) / height, bottom=bottom_h / height)
     axes = draw_row(fig, row[0], ["edden"], panels)
