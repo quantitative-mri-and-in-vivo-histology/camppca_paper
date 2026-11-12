@@ -40,7 +40,7 @@ from .harmony_figure import (
 from .paths import RESULTS
 from .style import B_AXIS, CMP, CND, CNO, COU
 
-ARMS = (("raw", "Undenoised", CNO), ("standard", "Standard MPPCA", CMP), ("proposed", "Proposed", COU))
+ARMS = (("raw", "Undenoised", CNO), ("standard", "MPPCA", CMP), ("proposed", "Proposed", COU))
 NORDIC = ("nordic2", "NORDIC", CND)
 
 

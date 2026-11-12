@@ -4,7 +4,7 @@
               slice axis, at the tertiles of the mask voxels' positions on that axis
     patterns  camppca's noise model estimated on each region alone, at the scan's patch
     transfer  pure noise X = C_A^(1/2) G, N_DRAW draws at the scan's patch and volume count, with
-              C_A a region's pattern. Standard's noise level of X whitened with each other region's
+              C_A a region's pattern. MPPCA's noise level of X whitened with each other region's
               pattern of the same cut, with the whole-brain pattern (noise_model.npz), and not at
               all, each over that of G
 

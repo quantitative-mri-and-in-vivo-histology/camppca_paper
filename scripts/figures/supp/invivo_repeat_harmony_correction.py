@@ -73,7 +73,7 @@ def main():
         ax.hlines(np.median(v), i - 0.2, i + 0.2, color=COLOURS[site], lw=2.2, zorder=1)
     ax.text(0.5, 1.13, "Noise level correction", transform=ax.transAxes, ha="center", va="bottom", fontsize=10,
             fontweight="bold")
-    ax.set_ylabel("$\\sigma_{proposed} / \\sigma_{standard} - 1$ [%]", fontsize=8)
+    ax.set_ylabel("$\\hat\\sigma_{\\mathrm{proposed}} / \\hat\\sigma_{\\mathrm{MPPCA}} - 1$ [%]", fontsize=8)
     ax.set_xticks(range(len(sites)))
     ax.set_xticklabels([SITES[s] for s in sites], fontsize=8, rotation=40, ha="right", rotation_mode="anchor")
     ax.set_xlim(-0.6, len(sites) - 0.4)

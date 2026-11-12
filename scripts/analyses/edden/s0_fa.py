@@ -1,6 +1,6 @@
 """Stage 3: DKI S0 and FA of every run in its own space, the inputs of the diffusion template.
 
-`camppca_paper.fits.dki_s0_fa` on eddy's corrected Standard series (stage 2), with eddy's
+`camppca_paper.fits.dki_s0_fa` on eddy's corrected MPPCA series (stage 2), with eddy's
 rotated b-vectors, inside the bet mask, for each input.
 
 Out, per input and run in data/analyses/edden/<part>/native/<run>/: dki_S0.nii.gz, dki_FA.nii.gz. Finished runs

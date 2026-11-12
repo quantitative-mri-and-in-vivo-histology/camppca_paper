@@ -20,7 +20,7 @@ from camppca_paper.style import MAP_SCALE, MAP_UNITS
 
 OUT = RESULTS / "supp/exvivo_maps.pdf"
 NAMES = ("FA", "MD", "MK", "AK", "RK")
-ARMS = (("reference", "Reference (20-average)"), ("noisy", "Undenoised"), ("standard", "Standard MPPCA"),
+ARMS = (("reference", "Reference (20-average)"), ("noisy", "Undenoised"), ("standard", "MPPCA"),
         ("proposed", "Proposed"))
 WM_FA = 0.25
 CONTOUR = "#39FF14"

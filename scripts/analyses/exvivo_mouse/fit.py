@@ -1,4 +1,4 @@
-"""Stage 2: DTI and DKI of the reference, Noisy, Standard MPPCA and Proposed inside the mask
+"""Stage 2: DTI and DKI of the reference, Noisy, MPPCA and Proposed inside the mask
 (`camppca_paper.fits.dti_dki_maps`).
 
 Out: data/analyses/exvivo_mouse/maps/<arm>_{FA,MD,MK,AK,RK}.nii.gz. Finished arms are skipped.

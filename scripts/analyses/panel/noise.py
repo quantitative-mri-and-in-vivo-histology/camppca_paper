@@ -2,13 +2,13 @@
 
     correction  median over the mask of sigma_proposed / sigma_standard - 1, in %
     prediction  on the patches camppca's loop fits on, the model fitted to each (`fit`)
-                predicts Standard's noise level from N_DRAW draws. Error: RMS over patches of
+                predicts MPPCA's noise level from N_DRAW draws. Error: RMS over patches of
                 the predicted over the read level, minus 1, in %
-    components  the fitted level off the patch-mean mode over Standard's reading, RMS over the
+    components  the fitted level off the patch-mean mode over MPPCA's reading, RMS over the
                 patches, minus 1, in %: the full model, the level only (C = I) and the
                 correlation only (D flat)
     transfer    pure noise X = C^(1/2) G, N_DRAW draws at the scan's patch and volume count.
-                Standard's noise level of X whitened with the other subject's C, with the mean
+                MPPCA's noise level of X whitened with the other subject's C, with the mean
                 table of the other configurations, and not at all, each over that of G. The
                 mean is over every other configuration whose table reaches the scan's lag,
                 cropped to it, with the phase encode on the first axis

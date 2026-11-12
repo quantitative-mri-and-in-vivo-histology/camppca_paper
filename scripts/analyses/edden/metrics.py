@@ -4,7 +4,7 @@
                 shell, split into variance and bias squared
     CoV         per map, across the runs, median over white matter: the T1's white-matter
                 posterior above WM_PV, inside the frame's mask
-    correction  per run, Proposed's noise level over Standard's, minus 1, in %
+    correction  per run, Proposed's noise level over MPPCA's, minus 1, in %
     noise       per run, each arm's noise level over the input's mean b0, in %. NORDIC2's from
                 its g-factor map (`camppca_paper.edden.nordic2_sigma`)
 

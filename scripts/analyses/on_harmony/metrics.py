@@ -4,7 +4,7 @@
                 shell, split into variance and bias squared
     CoV         per map, across the sessions (within) or scanners (cross), median over white
                 matter: the T1's white-matter posterior above WM_PV, inside the frame's mask
-    correction  per session, Proposed's noise level over Standard's, minus 1, in %
+    correction  per session, Proposed's noise level over MPPCA's, minus 1, in %
     noise       per session, each arm's noise level over the series' mean b0, in %
 
 Out: data/results/on_harmony/{within,cross}.json, one entry per participant.

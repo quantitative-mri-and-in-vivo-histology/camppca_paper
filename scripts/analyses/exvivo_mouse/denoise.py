@@ -1,11 +1,11 @@
-"""Stage 1: the reference, the true noise level, and Standard MPPCA and Proposed.
+"""Stage 1: the reference, the true noise level, and MPPCA and Proposed.
 
     noisy       the two-average series
     reference   the twenty-average series over AVG_RATIO. The files hold the sums of 20 and 2
                 averages, so the ratio is fixed by the acquisition
     sigma_true  per voxel, the SD over the noisy series' b0s, pooled by the root mean square
                 over POOL^3 inside the mask
-    arms        Standard MPPCA (camppca.denoise_mppca) and Proposed (camppca.denoise_camppca)
+    arms        MPPCA (camppca.denoise_mppca) and Proposed (camppca.denoise_camppca)
                 on the noisy series inside the mask, with camppca's default patch
 
 Out: data/analyses/exvivo_mouse/native/ (noisy, reference, sigma_true, standard, proposed,

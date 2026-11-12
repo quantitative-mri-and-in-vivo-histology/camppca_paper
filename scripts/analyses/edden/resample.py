@@ -1,7 +1,7 @@
 """Stage 7: per input, every arm of every run into its diffusion template, in one resampling
 (`camppca_paper.registration.resample`).
 
-The arms are the input (raw), Standard and Proposed, and for the complex data NORDIC2's magnitude.
+The arms are the input (raw), MPPCA and Proposed, and for the complex data NORDIC2's magnitude.
 
 Out: data/analyses/edden/<part>/frames/ (<run>_<arm>.nii.gz, <run>.bval, <run>.bvec, mask.nii.gz,
 wm_prob.nii.gz). Skipped when done.

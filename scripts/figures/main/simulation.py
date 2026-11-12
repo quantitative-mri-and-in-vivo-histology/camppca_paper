@@ -1,7 +1,7 @@
 """Figure: the simulation on the subject phantom.
 
 a   one acquisition at window blend 0.5 and maximum gain 2: image, residual and noise level
-    for ground truth, undenoised, Standard MPPCA and Proposed.
+    for ground truth, undenoised, MPPCA and Proposed.
 b-g two sweeps, the gain field alone and the window alone, N_DRAW draws per cell, scored over
     the brain: the true noise level over the thermal level (b, c), sigma-hat over the true level
     (d, e), and the MSE over every volume split into variance and bias squared (f, g).
@@ -39,7 +39,7 @@ QUANT = WORK / "simulations_quant.npz"
 QUAL_CACHE = WORK / "simulations_qual.npz"
 OUT = DATA_ROOT / "results/main/simulation.pdf"
 
-ARMS = (("standard", CMP, "Standard MPPCA"), ("proposed", COU, "Proposed"))
+ARMS = (("standard", CMP, "MPPCA"), ("proposed", COU, "Proposed"))
 MIXES = (("level", "Spatially varying level only", "sd_d", r"Spread of the noise level (std($d$))"),
          ("corr", "Correlation only", "rho1", r"Nearest-neighbor correlation ($\rho(1)$)"))
 
@@ -124,7 +124,7 @@ def sweep_stats(q):
 
 # ---------------------------------------------------------------------------- panel a
 
-COLS = ("Ground truth", "Undenoised", "Standard MPPCA", "Proposed")
+COLS = ("Ground truth", "Undenoised", "MPPCA", "Proposed")
 ROWS = ("Image", "Residual", "Noise level")
 
 

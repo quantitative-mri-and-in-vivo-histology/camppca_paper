@@ -1,10 +1,10 @@
-"""Stage 1: Standard MPPCA and Proposed on every run's magnitude, and on its real part.
+"""Stage 1: MPPCA and Proposed on every run's magnitude, and on its real part.
 
     real     complex only, `camppca phase` with the Siemens phase range PHASE_RANGE: magnitude
              and phase rotated onto the real axis
     mask     FSL bet -R -f 0.1 on the mean b0 of the input, holes filled
              (`camppca_paper.masks.b0_brain_mask`)
-    arms     Standard MPPCA (camppca.denoise_mppca) and Proposed (camppca.denoise_camppca), both
+    arms     MPPCA (camppca.denoise_mppca) and Proposed (camppca.denoise_camppca), both
              on every voxel, with camppca's default patch. Proposed estimates its noise model
              inside the mask. NORDIC2 runs separately, see nordic2.m
 

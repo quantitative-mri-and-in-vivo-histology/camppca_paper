@@ -1,7 +1,7 @@
 """Figure: correlation transfer between brain regions (data/results/panel/regions.json).
 
 One violin per source of the whitening pattern: another region of the same cut, the whole
-brain, or none (Standard MPPCA). Every cut axis, region and scan pooled, the median as a bar.
+brain, or none (MPPCA). Every cut axis, region and scan pooled, the median as a bar.
 
     python scripts/figures/supp/regional_correlation_transfer.py
 """
@@ -16,7 +16,7 @@ from camppca_paper.style import CMP, COU
 
 OUT = RESULTS / "supp/regional_correlation_transfer.pdf"
 SOURCES = (("region", "Other\nregion", COU), ("whole_brain", "Whole\nbrain", COU),
-           ("none", "None\n(Standard MPPCA)", CMP))
+           ("none", "None\n(MPPCA)", CMP))
 
 
 def main():

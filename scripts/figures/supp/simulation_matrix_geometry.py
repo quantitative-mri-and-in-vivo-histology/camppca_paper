@@ -30,7 +30,7 @@ CACHE = WORK / "simulation_matrix_geometry.npz"
 OUT = RESULTS / "supp/simulation_matrix_geometry.pdf"
 MIXES = (("level", "Spatially varying level only", "sd_d", r"Spread of the noise level (std($d$))"),
          ("corr", "Correlation only", "rho1", r"Nearest-neighbor correlation ($\rho(1)$)"))
-ARMS = (("standard", "Standard MPPCA"), ("proposed", "Proposed"))
+ARMS = (("standard", "MPPCA"), ("proposed", "Proposed"))
 NORM = Normalize(0.65, 1.35)
 
 

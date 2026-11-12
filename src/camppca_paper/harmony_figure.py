@@ -5,7 +5,7 @@
             volume whose direction is closest to the first session's VOLUME, divided by that
             session's mean b0 in the mask. One grey scale within; across scanners one per scanner
             for the regions, ROI_WINDOW percentiles of its Undenoised region
-    below   the noise level of Standard MPPCA and Proposed over the mean b0 (one point per
+    below   the noise level of MPPCA and Proposed over the mean b0 (one point per
             participant within, per scanner across), the signal error (within), and the DTI and
             DKI coefficient of variation, every participant joined across the arms, a bar at each
             median. Bars have width W, the arms of a group are STEP apart and the groups GAP apart,
@@ -40,7 +40,7 @@ PANEL_GAP = 0.1                 # between point panels, figure fraction
 VENDOR = {"OXF1PRI": "Siemens", "OXF2PRI": "Siemens", "OXF3TRI": "Siemens", "NOT1ACH": "Philips",
           "NOT2ING": "Philips", "NOT4GEP": "GE", "OXF4GEP": "GE"}
 CROSS_ORDER = ("OXF1PRI", "OXF2PRI", "OXF3TRI", "NOT1ACH", "NOT2ING", "OXF4GEP", "NOT4GEP")
-ARMS = (("raw", "Undenoised", CNO), ("standard", "Standard MPPCA", CMP), ("proposed", "Proposed", COU))
+ARMS = (("raw", "Undenoised", CNO), ("standard", "MPPCA", CMP), ("proposed", "Proposed", COU))
 
 
 def metrics(which):
@@ -93,7 +93,7 @@ def geometry(m, n):
 def draw_images(fig, spec, which, arrows=None):
     """`arrows` maps a session's run number (within) or site (cross) to (row, column, tail row offset, tail column
     offset) tuples within
-    the region; each gets a red arrow in every row, pointing at texture that Standard keeps and Proposed removes,
+    the region; each gets a red arrow in every row, pointing at texture that MPPCA keeps and Proposed removes,
     its tail at the offset from the tip."""
     ims, m = IMAGES[which]
     ses = shown_sessions(which)
@@ -157,7 +157,7 @@ def centre(i, n):
 
 
 def noise_points(ax, which):
-    """Standard MPPCA's and Proposed's noise level (`metrics.py`), joined per point, a bar at each median.
+    """MPPCA's and Proposed's noise level (`metrics.py`), joined per point, a bar at each median.
     Within, a point is a participant's mean over its sessions; across, a scanner's mean over its participants."""
     d = metrics(which)
     if which == "within":
@@ -209,7 +209,7 @@ def rows(which, correction=False):
             lambda ax: signal_bars(ax, d, list(d)))
     scanners = [(SITES[site], None) for site in correction_sites(which)]
     first = [("Noise level", "$\\hat\\sigma$ relative to mean $b = 0$ [%]", [("", None)], None, lambda ax: noise_points(ax, which))]
-    first += [("Noise level correction", "$\\sigma_{proposed} / \\sigma_{standard} - 1$ [%]",
+    first += [("Noise level correction", "$\\hat\\sigma_{\\mathrm{proposed}} / \\hat\\sigma_{\\mathrm{MPPCA}} - 1$ [%]",
                scanners, None,
                lambda ax: correction_points(ax, which))] if correction else []
     if which == "cross":

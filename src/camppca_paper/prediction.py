@@ -1,4 +1,4 @@
-"""Standard MPPCA's noise level on patches, read and predicted from a noise covariance model."""
+"""MPPCA's noise level on patches, read and predicted from a noise covariance model."""
 
 import numpy as np
 from camppca.denoiser.mp_threshold import mp_threshold
@@ -67,7 +67,7 @@ def fit(X, C, d):
 
 
 def predicted(Sigma, kept, G):
-    """Standard MPPCA's noise level on a patch, predicted as its median over draws of the
+    """MPPCA's noise level on a patch, predicted as its median over draws of the
     fitted noise plus the kept signal.
 
     Args:

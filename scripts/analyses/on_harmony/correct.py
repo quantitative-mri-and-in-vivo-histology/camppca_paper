@@ -2,7 +2,7 @@
 
     topup  the first N_B0 b0s of the AP and of the PA series. acqp rows from each series'
            PhaseEncodingDirection, readout time READOUT_S. bet -f 0.2 on the mean corrected b0
-    eddy   eddy_cuda11.0 on the Standard MPPCA series (stage 1), so the alignment cannot favour
+    eddy   eddy_cuda11.0 on the MPPCA series (stage 1), so the alignment cannot favour
            Proposed. Only eddy's estimates are used later, in stage 7
 
 Topups run on the CPU, many sessions in parallel. Each session's eddy starts on the GPU as soon

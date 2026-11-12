@@ -1,6 +1,6 @@
 """Stage 2: denoise every scan, as ON-Harmony.
 
-Standard MPPCA and Proposed on the series up to b SHELL_MAX (`camppca_paper.panel.load`), both
+MPPCA and Proposed on the series up to b SHELL_MAX (`camppca_paper.panel.load`), both
 on every voxel. Proposed estimates its noise model inside brain_mask_denoising (stage 1). The
 patch is camppca's default, dwidenoise's rule.
 

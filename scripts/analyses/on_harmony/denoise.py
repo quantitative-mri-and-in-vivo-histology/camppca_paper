@@ -1,6 +1,6 @@
 """Stage 1: denoise every session in its own space, before any correction.
 
-Standard MPPCA and Proposed on the AP series, both on every voxel. Proposed estimates its noise
+MPPCA and Proposed on the AP series, both on every voxel. Proposed estimates its noise
 model inside a brain mask from FSL bet -R -f 0.3 on the mean b0
 (`camppca_paper.masks.b0_brain_mask`). The patch is camppca's default, dwidenoise's rule.
 

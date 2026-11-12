@@ -1,7 +1,7 @@
 """Stage 3: DKI S0 and FA of every session in its own space, the inputs of the diffusion
 templates.
 
-`camppca_paper.fits.dki_s0_fa` on eddy's corrected Standard series (stage 2), with eddy's
+`camppca_paper.fits.dki_s0_fa` on eddy's corrected MPPCA series (stage 2), with eddy's
 rotated b-vectors, inside the bet mask.
 
 Out, per session in data/analyses/on_harmony/<subject>/native/<session>/: dki_S0.nii.gz,

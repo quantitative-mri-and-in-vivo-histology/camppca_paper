@@ -2,7 +2,7 @@
 
 Each volume is pulled through eddy's estimated correction for it and the session's warp into
 the template, with a cubic B-spline (`camppca_paper.registration`). The arms are the source
-series (raw), Standard and Proposed. b-vectors are eddy's rotated ones, then rotated by the
+series (raw), MPPCA and Proposed. b-vectors are eddy's rotated ones, then rotated by the
 session-to-template affine.
 
 Out: data/analyses/on_harmony/<subject>/frames/<set>/ (<session>_<arm>.nii.gz, <session>.bval,

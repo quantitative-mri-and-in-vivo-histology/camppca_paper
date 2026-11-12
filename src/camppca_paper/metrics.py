@@ -77,7 +77,7 @@ def cov(maps, names, wm, arms):
 
 
 def correction(native):
-    """Proposed's noise level over Standard's, minus 1, in %, median over the denoising mask.
+    """Proposed's noise level over MPPCA's, minus 1, in %, median over the denoising mask.
 
     Args:
         native: Folder with sigma_standard, sigma_proposed and brain_mask_denoising (.nii.gz).

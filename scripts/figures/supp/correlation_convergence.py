@@ -2,7 +2,7 @@
 
 a   patterns estimated on fewer volumes, b   the loop fitted on fewer patches. One violin per
 subset size, every scan and subset pooled, the median as a bar. The last violin is no
-whitening (Standard MPPCA). Each value is Standard's noise level on pure noise with the whole
+whitening (MPPCA). Each value is MPPCA's noise level on pure noise with the whole
 series' pattern, whitened with the subset's pattern, over that of white noise.
 
     python scripts/figures/supp/correlation_convergence.py
@@ -42,7 +42,7 @@ def main():
             violin(ax, i, v, COU)
             print(f"  {kind:8s} {n:4d}  median {np.nanmedian(v):.3f}  range {np.nanmin(v):.3f}-{np.nanmax(v):.3f}")
         violin(ax, len(sizes), none, CMP)
-        ax.set_xticks(range(len(sizes) + 1), [str(n) for n in sizes] + ["Standard\nMPPCA"], fontsize=8)
+        ax.set_xticks(range(len(sizes) + 1), [str(n) for n in sizes] + ["MPPCA"], fontsize=8)
         ax.set_xlim(-0.6, len(sizes) + 0.6)
         ax.set_xlabel(xlabel, fontsize=9)
         ax.tick_params(labelsize=8, labelleft=True)

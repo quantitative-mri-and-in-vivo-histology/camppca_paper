@@ -1,7 +1,7 @@
 """Figure: in vivo repeatability across scanners (ON-Harmony, one session per scanner of each
 participant's phase, seven participants). Drawing in `camppca_paper.harmony_figure`.
 
-ARROWS mark texture Standard MPPCA keeps and Proposed removes, per scanner as (row, column,
+ARROWS mark texture MPPCA keeps and Proposed removes, per scanner as (row, column,
 tail row offset, tail column offset) in the region. They are placed by eye.
 
     python scripts/figures/main/invivo_reprod_harmony.py

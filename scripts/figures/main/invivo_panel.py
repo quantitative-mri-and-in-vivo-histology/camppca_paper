@@ -1,6 +1,6 @@
 """Figure: the noise covariance across the public datasets (data/results/panel/noise.json).
 
-a   prediction error of Standard MPPCA's noise level against the correction, one point per scan
+a   prediction error of MPPCA's noise level against the correction, one point per scan
     by vendor, medians dashed, the distributions in strips on top and on the right
 b   the correction with the level only and with the correlation only, as % of the full model's
 c   the correlation table along phase encode, readout and slice, lags 1 to REACH, one thin line
@@ -62,8 +62,8 @@ def panel_prediction(ax, rs):
             fontsize=8)
     ax.text(xmed + 0.3, 0.98, f"median {xmed:.1f} %", transform=ax.get_xaxis_transform(), ha="left", va="top",
             fontsize=8)
-    ax.set_xlabel("Correction ($\\sigma_{proposed} / \\sigma_{standard} - 1$) [%]")
-    ax.set_ylabel("Prediction error\n($\\sigma_{pred} / \\sigma_{standard} - 1$) [%]")
+    ax.set_xlabel("Correction ($\\hat\\sigma_{\\mathrm{proposed}} / \\hat\\sigma_{\\mathrm{MPPCA}} - 1$) [%]")
+    ax.set_ylabel("Prediction error\n($\\hat\\sigma_{\\mathrm{predicted}} / \\hat\\sigma_{\\mathrm{MPPCA}} - 1$) [%]")
     ax.set_xlim(0, np.ceil(max(corr)) + 1.5)
     ax.set_ylim(0, None)
     ax.legend(frameon=False, fontsize=8, loc="upper left")
@@ -128,7 +128,7 @@ def panel_profiles(axes, rs):
 def panel_transfer(ax, rs):
     rng = np.random.default_rng(0)
     arms = (("other_subject", "Second\nsubject"), ("mean", "Across-dataset\nmean"),
-            ("none", "None\n(Standard MPPCA)"))
+            ("none", "None\n(MPPCA)"))
     ax.axhline(1, color="0.4", lw=0.8, ls="--", zorder=1)
     for i, (arm, _) in enumerate(arms):
         vendor_dots(ax, i, [r["transfer"][arm] for r in rs], [r["vendor"] for r in rs], rng)
@@ -148,7 +148,7 @@ def figure():
                    width_ratios=[3, 1.25])
 
     a = fig.add_subplot(top[0])
-    panel_prediction(a, rs).set_title("Noise level correction versus Standard MPPCA", **TITLE)
+    panel_prediction(a, rs).set_title("Noise level correction versus MPPCA", **TITLE)
     b = fig.add_subplot(top[1])
     panel_components(b, rs)
     b.set_title("What drives the noise level correction?", **TITLE)

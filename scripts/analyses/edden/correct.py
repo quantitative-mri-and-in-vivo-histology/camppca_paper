@@ -3,7 +3,7 @@
     topup  the first N_B0 b0s of the AP magnitude and of the PA magnitude of the same run
     mask   FSL bet -R -f 0.1 on topup's mean corrected b0, holes filled
            (`camppca_paper.masks.b0_brain_mask`), as eddy's mask
-    eddy   eddy_cuda11.0 on the Standard MPPCA series of the input (stage 1), so the alignment
+    eddy   eddy_cuda11.0 on the MPPCA series of the input (stage 1), so the alignment
            cannot favour another arm. Only eddy's estimates are used later, in stage 7
 
 Out, per input and run in data/analyses/edden/<part>/native/<run>/: topup_*, b0_mean.nii.gz, mask_bet.nii.gz,

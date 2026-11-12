@@ -1,6 +1,6 @@
 """Colours shared by all figures."""
 
-CMP, COU = "#c53030", "#2b6cb0"   # Standard MPPCA, Proposed
+CMP, COU = "#c53030", "#2b6cb0"   # MPPCA, Proposed
 CNO = "#707070"                   # Undenoised
 CND = "#b7791f"                   # NORDIC
 RCM = "RdBu_r"                    # signed residuals

@@ -7,7 +7,7 @@
               fits on, with the full model's level map. A fit costs about as much as the full
               loop, hence one subset
     price     pure noise X = C^(1/2) G, N_DRAW draws at the scan's patch and volume count, with
-              C the whole series' pattern (noise_model.npz). Standard's noise level of X
+              C the whole series' pattern (noise_model.npz). MPPCA's noise level of X
               whitened with each subset's pattern, and not at all, over that of G
 
 Out: convergence.npz per scan in data/analyses/panel/<config>/<subject>/ (each subset's rho and
